@@ -119,8 +119,27 @@ module.exports = function runMachineAsScript(opts, exitOverrides){
       console.log(chalk.red('Something went wrong:'));
       console.error(err.stack ? chalk.gray(err.stack) : err);
     },
-    success: function() {
+    success: function(output) {
+
+      // If output is not undefined and expected, then log it.
+      if (!_.isUndefined(output)) {
+        try {
+          if (
+            !_.isUndefined(liveMachine.exits.success.example) ||
+            _.isFunction(liveMachine.exits.success.getExample) ||
+            !_.isUndefined(liveMachine.exits.success.like) ||
+            !_.isUndefined(liveMachine.exits.success.itemOf)
+          ) {
+            console.log(util.inspect(output, {depth: null, colors: true}));
+          }
+        }
+        catch (e) { /* fail silently if anything goes awry */ }
+        return;
+      }
+
+      // Otherwise, log a generic message.
       console.log(chalk.green('OK.'));
+
     }
   });
 
