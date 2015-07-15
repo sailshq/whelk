@@ -25,7 +25,7 @@ module.exports = function runMachineAsScript(opts, exitOverrides){
 
   // Build machine, applying defaults
   var wetMachine = Machine.build(_.extend({
-    identity: machineDef.identity || (machineDef.friendlyName ? _.kebabCase(machineDef.friendlyName) : 'anonymous-machine-script'),
+    identity: machineDef.identity || (machineDef.friendlyName ? _.kebabCase(machineDef.friendlyName) : 'anonymous-machine-as-script'),
     inputs: {},
     exits: {
       success: {
