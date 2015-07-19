@@ -47,9 +47,13 @@ module.exports = function runMachineAsScript(opts, exitOverrides){
   // Keep track of shortcuts used (e.g. can't have a "-p" option mean two different things at once)
   var shortcutsSoFar = [];
 
+  // Loop over each input and check for command line arguments and/or environment variables.
   _.each(wetMachine.inputs, function (inputDef, inputName) {
 
+    // Handle `--` flags
     var opt = '--'+inputName;
+
+    // Handle `-` shortcuts
     var optShortcut = (function (){
       var _shortcut = '-'+inputName[0];
       // If shortcut flag already exists using the same letter, don't provide a shortcut for this option.
@@ -63,6 +67,8 @@ module.exports = function runMachineAsScript(opts, exitOverrides){
       return (_optDescription[0]||'').toLowerCase() + _optDescription.slice(1);
     })();
 
+    // Handle environment variables
+    // todo
 
     // Call out to commander and apply usage
     var optUsage = (function (){
