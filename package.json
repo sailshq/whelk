@@ -20,6 +20,7 @@
     "yargs": "3.4.5"
   },
   "devDependencies": {
+    "machinepack-process": "^1.4.0",
     "mocha": "^2.2.4"
   },
   "repository": {
