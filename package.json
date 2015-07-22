@@ -5,6 +5,9 @@
   "scripts": {
     "test": "node ./node_modules/mocha/bin/mocha"
   },
+  "bin": {
+    "machine-as-script": "./bin/machine-as-script.js"
+  },
   "keywords": [
     "machine",
     "script",
