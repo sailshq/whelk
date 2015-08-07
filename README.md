@@ -179,10 +179,24 @@ Mutable reference inputs works just like JSON (`*`) inputs.  In other words, it 
 
 To learn more about rttc types, check out the [rttc README on GitHub](https://github.com/node-machine/rttc).
 
+## Misc
 
-## Escaping input values
+#### Escaping your input values
 
 The rules for escaping env vars, CLI opts, and CLI arguments can vary across operating systems.  However, a good reference point is the [escape machine in mp-process](http://node-machine.org/machinepack-process/escape).  That's what the `machinepack` command-line tool uses internally for creating code samples after a machine is run using `mp exec`.
+
+#### Precedence
+
+It's always best to keep things simple.  In keeping with that spirit, you should never _intentionally_ use both environment variables AND CLI opts/args to configure your script. But weird things are unavoidable, and when debugging, it's helpful to know more about the tools you use in case something jumps out.
+
+Starting from the highest precedence, here is a list of how this module prioritizes your input configurations:
+
+1. CLI arguments (`./my-script.js bar`)
+2. Environment variables (`foo=bar ./my-script.js`)
+3. CLI opts (`./my-script.js --foo='bar'`)
+
+
+In other words, if you specify the same input as a CLI argument AND as an environment variable or CLI opt, the CLI argument will always "win".  And if you specify the same input as an environment variable and CLI opt, the environment variable will always win.
 
 
 ## License
