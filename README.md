@@ -17,7 +17,9 @@ $ npm install machine-as-script --save
 var asScript = require('machine-as-script');
 var MPMath = require('machinepack-math');
 
-asScript(MPMath.add).exec({
+asScript({
+  machine: MPMath.add
+}).exec({
   success: function (sum){
     console.log('Got result:', sum);
   }
@@ -37,7 +39,9 @@ $ node ./add-numbers.js --a=4 --b=5
 
 ## Using serial CLI arguments
 
-You can use the `args` input to accept serial CLI arguments:
+In addition to specifying inputs as `--` CLI opts, you can configure your script to accept serial CLI arguments.
+
+Just specify `args` as an array of input names, in the expected order:
 
 ```js
 asScript({
@@ -53,10 +57,132 @@ asScript({
 Now you can use serial CLI arguments as inputs:
 
 ```sh
-$ node ./add-numbers.js 2 3
-# Got result: 5
+$ node ./add-numbers.js 4 5
+# Got result: 9
 ```
 
+## Using environment variables
+
+Sometimes (particularly in a production setting, like on Heroku) you want to be able to
+use your machine as a script without specifying command-line arguments or checking in
+credentials or other configuration details to source control.  This is typically accomplished
+using environment variables.
+
+When using `machine-as-script`, as an alternative to CLI opts, you can specify input values
+using environment variables:
+
+```sh
+$ ___a=4 ___b=5 node ./add-numbers.js
+# Got result: 9
+```
+
+Environment variables work exactly like CLI opts, with the same escaping rules for specifying JSON arrays and dictionaries.
+
+#### Setting a namespace
+
+It's usually a good idea to namespace the environment variables specific to your application.
+Especially since many inputs have fairly common names (_as they should!_), it's helpful to use a prefix to avoid conflicts with env variables used by other processes.
+
+The default namespace is 3 underscores (`___`).  In other words, if your machine has an input `foo`, then you could configure that input using the environment variable named `___foo`.
+
+To customize the namespace for your script, just specify an `envVarNamespace`:
+
+```js
+asScript({
+  machine: MPMath.add,
+  envVarNamespace: 'add_numbers__'
+}).exec({
+  success: function (sum){
+    console.log('Got result:', sum);
+  }
+});
+```
+
+Now your custom string will be the expected namespace for environment variables:
+
+```sh
+$ add_numbers__a=4 add_numbers__b=5 node ./add-numbers.js
+# Got result: 9
+```
+
+
+
+#### A note for Windows users
+Also note that [on Windows, the names of environment variables are capitalized/case-insensitive](https://en.wikipedia.org/wiki/Environment_variable#DOS), so you may have difficulties using this approach.  I'm happy to help in the implementation of a workaround if you need this and have any ideas for how to do it (hit me up [on Twitter](http://twitter.com/mikermcneil)).
+
+
+## Configuring non-string values
+
+So it's really easy to see how string input values can be configured using CLI opts, arguments, or environment variables.  But more often than not, when configuring a script, you need to specify an input value that _isn't_ a string-- things like arrays, dictionaries, booleans, and numbers.
+
+This module lets you configure _any_ input value-- even lamdas.  Internally, it uses the `parseHuman()` method from [`rttc`](http://github.com/node-machine/rttc).  For a more detailed look at the exact rules, check out the README in the rttc repo.  Below, we look at one example for each of the major use cases you're likely to run into.
+
+#### Numeric inputs
+
+```sh
+$ node ./add-numbers.js --a='4' --b='5'
+```
+
+#### Boolean inputs
+
+```sh
+$ node ./divide-numbers.js --a='9' --b='5' --useFloatingPoint='false'
+```
+
+#### Lamda (`->`) inputs
+
+
+#### Dictionary (`{}`) and array (`[]`) inputs
+
+If an input is expecting a dictionary or array (i.e. its example is a dictionary or array), then its value should be specified as JSON.
+
+```sh
+$ node ./count-keys.js --someDictionary='{"this": {"must": ["be","JSON","encoded"]}}'
+```
+
+```sh
+$ node ./count-items.js --someArray='["this","must","be","JSON","encoded","too"]'
+```
+
+#### JSON (`*`) inputs
+
+If an input is expecting generic JSON (i.e. its example is `'*'`), then its value should be specified as JSON-- even if that value is a simple string, number, or boolean.
+
+```sh
+$ node ./is-null.js --value='{w: true, x: null, y: "some string", z: 34}'
+```
+
+```sh
+$ node ./is-null.js --value='["should be json encoded", 4, null]'
+```
+
+```sh
+$ node ./is-null.js --value='"even if it is a string"'
+```
+
+```sh
+$ node ./is-null.js --value='22353'
+```
+
+```sh
+$ node ./is-null.js --value='true'
+```
+
+```sh
+$ node ./is-null.js --value='null'
+```
+
+
+#### Mutable reference (`===`) inputs
+
+Mutable reference inputs works just like JSON (`*`) inputs.  In other words, it isn't possible to explicitly specify `undefined` from the command-line (other than by simple omission.)
+
+To learn more about rttc types, check out the [rttc README on GitHub](https://github.com/node-machine/rttc).
+
+
+## Escaping input values
+
+The rules for escaping env vars, CLI opts, and CLI arguments can vary across operating systems.  However, a good reference point is the [escape machine in mp-process](http://node-machine.org/machinepack-process/escape).  That's what the `machinepack` command-line tool uses internally for creating code samples after a machine is run using `mp exec`.
 
 
 ## License
