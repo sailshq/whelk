@@ -19,7 +19,8 @@
     "chalk": "0.5.1",
     "commander": "2.6.0",
     "lodash": "^3.8.0",
-    "machine": "^11.0.1",
+    "machine": "^11.0.3",
+    "rttc": "^8.1.7",
     "yargs": "3.4.5"
   },
   "devDependencies": {

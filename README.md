@@ -54,12 +54,17 @@ asScript({
 });
 ```
 
-Now you can use serial CLI arguments as inputs:
+Now you can use serial CLI arguments to configure the related inputs:
 
 ```sh
 $ node ./add-numbers.js 4 5
 # Got result: 9
 ```
+
+#### Experimental: The `args` input
+
+If you don't already have an input named `args`, when using machine-as-action, your machine's `fn` will receive an array of serial command-line arguments in `inputs.args`.  **THIS IS AN EXPERIMENTAL FEATURE AND COULD CHANGE AT ANY TIME WITHOUT BACKWARDS COMPATIBILITY!!**
+
 
 ## Using environment variables
 
@@ -115,7 +120,7 @@ Also note that [on Windows, the names of environment variables are capitalized/c
 
 So it's really easy to see how string input values can be configured using CLI opts, arguments, or environment variables.  But more often than not, when configuring a script, you need to specify an input value that _isn't_ a string-- things like arrays, dictionaries, booleans, and numbers.
 
-This module lets you configure _any_ input value-- even lamdas.  Internally, it uses the `parseHuman()` method from [`rttc`](http://github.com/node-machine/rttc).  For a more detailed look at the exact rules, check out the README in the rttc repo.  Below, we look at one example for each of the major use cases you're likely to run into.
+This module lets you configure _any_ input value-- even lamdas.  Internally, it uses the [`parseHuman()` method from `rttc`](https://github.com/node-machine/rttc#parsehumanstringfromhuman-typeschemaundefined-unsafemodefalse).  For a more detailed look at the exact rules, check out the README in the rttc repo.  Below, we look at one example for each of the major use cases you're likely to run into.
 
 #### Numeric inputs
 
@@ -131,6 +136,9 @@ $ node ./divide-numbers.js --a='9' --b='5' --useFloatingPoint='false'
 
 #### Lamda (`->`) inputs
 
+```sh
+$ node ./each.js --array='[]' --iteratee='function (thing){ return thing.foo; }'
+```
 
 #### Dictionary (`{}`) and array (`[]`) inputs
 

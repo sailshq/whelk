@@ -8,6 +8,7 @@ var program = require('commander');
 var chalk = require('chalk');
 var yargs = require('yargs');
 var Machine = require('machine');
+var rttc = require('rttc');
 
 
 module.exports = function runMachineAsScript(opts, exitOverrides){
@@ -129,6 +130,20 @@ module.exports = function runMachineAsScript(opts, exitOverrides){
     });
   }
 
+  // Finally, loop through each of the input configurations and run `rttc.parseHuman()`.
+  inputConfiguration = _.reduce(inputConfiguration, function (memo, val, inputName){
+
+    // Skip special `args` input (unless there's actually an input named `args`.)
+    var inputDef = wetMachine.inputs[inputName];
+    if (!inputDef && inputName === 'args') {
+      return memo;
+    }
+    if (!inputDef) {
+      throw new Error('Unexpected error: received configuration for unknown input ('+inputName+')');
+    }
+    memo[inputName] = rttc.parseHuman(val, rttc.infer(inputDef.example), true);
+    return memo;
+  }, {});
 
   // Set input values from CLI args/opts
   var liveMachine = wetMachine(inputConfiguration);
