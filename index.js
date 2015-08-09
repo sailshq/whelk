@@ -141,6 +141,9 @@ module.exports = function runMachineAsScript(opts, exitOverrides){
     if (!inputDef) {
       throw new Error('Unexpected error: received configuration for unknown input ('+inputName+')');
     }
+    // Before using `rttc.parseHuman()`, ensure the value is a string
+    // (yargs parses some things as numbers)
+    val = val+'';
     memo[inputName] = rttc.parseHuman(val, rttc.infer(inputDef.example), true);
     return memo;
   }, {});
