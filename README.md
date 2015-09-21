@@ -83,6 +83,7 @@ $ ___a=4 ___b=5 node ./add-numbers.js
 
 Environment variables work exactly like CLI opts, with the same escaping rules for specifying JSON arrays and dictionaries.
 
+
 #### Setting a namespace
 
 It's usually a good idea to namespace the environment variables specific to your application.
@@ -112,8 +113,11 @@ $ add_numbers__a=4 add_numbers__b=5 node ./add-numbers.js
 
 
 
-#### A note for Windows users
-Also note that [on Windows, the names of environment variables are capitalized/case-insensitive](https://en.wikipedia.org/wiki/Environment_variable#DOS), so you may have difficulties using this approach.  I'm happy to help in the implementation of a workaround if you need this and have any ideas for how to do it (hit me up [on Twitter](http://twitter.com/mikermcneil)).
+#### A note on case-sensitivity
+
+Note that input names are _case-sensitive_, and therefore the names of environment variables understood by this module are also case-sensitive.
+
+[On Windows, the names of environment variables are capitalized/case-insensitive](https://en.wikipedia.org/wiki/Environment_variable#DOS), so you may have difficulties using this approach.  I'm happy to help in the implementation of a workaround if you need this and have any ideas for how to do it (hit me up [on Twitter](http://twitter.com/mikermcneil)).
 
 
 ## Configuring non-string values
