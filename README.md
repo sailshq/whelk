@@ -187,7 +187,7 @@ $ node ./is-null.js --value='null'
 
 #### Mutable reference (`===`) inputs
 
-Mutable reference inputs works just like JSON (`*`) inputs.  In other words, it isn't possible to explicitly specify `undefined` from the command-line (other than by simple omission.)
+For the automatic console output of machine-as-script, mutable reference inputs work just like JSON (`*`) inputs. For custom behavior, just override the automatic handling using `.exec()`.
 
 To learn more about rttc types, check out the [rttc README on GitHub](https://github.com/node-machine/rttc).
 

@@ -19,7 +19,7 @@
     "chalk": "0.5.1",
     "commander": "2.6.0",
     "lodash": "^3.8.0",
-    "machine": "^11.0.3",
+    "machine": "12.1.0",
     "rttc": "^8.1.7",
     "yargs": "3.4.5"
   },

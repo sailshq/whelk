@@ -11,11 +11,25 @@ var Machine = require('machine');
 var rttc = require('rttc');
 
 
-module.exports = function runMachineAsScript(opts, exitOverrides){
+
+/**
+ *
+ * @param  {Dictionary|Machine} opts
+ *         @property {Dictionary|Machine} opts.machine
+ *         @property {Array} opts.args
+ *         @property {Array} opts.envVarNamespace
+ *         (see readme for more information)
+ *
+ * @return {Machine}     [a machine instance]
+ */
+module.exports = function runMachineAsScript(opts){
 
   opts = opts||{};
 
   // Use either `opts` or `opts.machine` as the machine definition
+  // If `opts.machine` is truthy, we'll use that as the machine definition.
+  // Otherwise, we'll understand the entire `opts` dictionary to be the machine
+  // definition.
   var machineDef;
   if (!opts.machine) {
     machineDef = opts;
@@ -24,30 +38,46 @@ module.exports = function runMachineAsScript(opts, exitOverrides){
     machineDef = opts.machine;
   }
 
+  // Tolerate if no machine was provided (this is just for backwards compatibility-- should be deprecated.)
+  machineDef = machineDef || {};
+
   // Set up namespace for environment variables.
   var envVarNamespace = '___';
   if (_.isString(opts.envVarNamespace)) {
     envVarNamespace = opts.envVarNamespace;
   }
 
-  // If the machineDef already has an ID, assume it's already an instantiated machine
-  // and use as-is.  Otherwise, use the definition to build a new machine.
-  // TODO -- is there better duck-typing for Machines?
-  var wetMachine = machineDef.id ? machineDef : Machine.build(_.extend({
-    identity: machineDef.identity || (machineDef.friendlyName ? _.kebabCase(machineDef.friendlyName) : 'anonymous-machine-as-script'),
-    inputs: {},
-    exits: {
-      success: {
-        description: 'Done.'
+  // `Machine.build()` tolerates:
+  //   • machine definitions
+  //   • already-instantiated ("wet") machine instances (just passes them through)
+  //   • naked functions (builds them into an anonymous machine automatically.  For convenience and quick prototyping)
+
+  // But since we're modifying the machine definition here...
+  // (TODO: consider moving this into machine runner-- but need to do that _carefully_-- there's complexities in there)
+  // we need to duck-type the provided machine to determine whether or not it is an already-instantiated machine or not.
+  // If it is, use as-is. Otherwise, use the definition to build a new machine.
+  // (checks new `isWetMachine` property, but also the function name for backwards compatibility)
+  var wetMachine;
+  if ( machineDefinition.isWetMachine || machineDefinition.name==='_callableMachineWrapper') {
+    wetMachine = machineDefinition;
+  }
+  else {
+    wetMachine = Machine.build(_.extend({
+      identity: machineDef.identity || (machineDef.friendlyName ? _.kebabCase(machineDef.friendlyName) : 'anonymous-machine-as-script'),
+      inputs: {},
+      exits: {
+        success: {
+          description: 'Done.'
+        },
+        error: {
+          description: 'Unexpected error occurred.'
+        }
       },
-      error: {
-        description: 'Unexpected error occurred.'
+      fn: function (inputs, exits){
+        exits.error(new Error('Not implemented yet!'));
       }
-    },
-    fn: function (inputs, exits){
-      exits.error(new Error('Not implemented yet!'));
-    }
-  },machineDef||{}));
+    },machineDef));
+  }
 
 
   // Configure CLI usage helptext and set up commander
@@ -162,7 +192,7 @@ module.exports = function runMachineAsScript(opts, exitOverrides){
     },
     success: function(output) {
 
-      // If output is not undefined and expected, then log it.
+      // If output is expected, then log it.
       if (!_.isUndefined(output)) {
         try {
           if (
