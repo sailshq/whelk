@@ -1,6 +1,6 @@
 {
   "name": "machine-as-script",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "Run a machine as a command-line script.",
   "scripts": {
     "test": "node ./node_modules/mocha/bin/mocha"
