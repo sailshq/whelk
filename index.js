@@ -30,8 +30,10 @@ module.exports = function runMachineAsScript(opts, exitOverrides){
     envVarNamespace = opts.envVarNamespace;
   }
 
-  // Build machine, applying defaults
-  var wetMachine = Machine.build(_.extend({
+  // If the machineDef already has an ID, assume it's already an instantiated machine
+  // and use as-is.  Otherwise, use the definition to build a new machine.
+  // TODO -- is there better duck-typing for Machines?
+  var wetMachine = machineDef.id ? machineDef : Machine.build(_.extend({
     identity: machineDef.identity || (machineDef.friendlyName ? _.kebabCase(machineDef.friendlyName) : 'anonymous-machine-as-script'),
     inputs: {},
     exits: {
