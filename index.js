@@ -58,8 +58,8 @@ module.exports = function runMachineAsScript(opts){
   // If it is, use as-is. Otherwise, use the definition to build a new machine.
   // (checks new `isWetMachine` property, but also the function name for backwards compatibility)
   var wetMachine;
-  if ( machineDefinition.isWetMachine || machineDefinition.name==='_callableMachineWrapper') {
-    wetMachine = machineDefinition;
+  if ( machineDef.isWetMachine || machineDef.name==='_callableMachineWrapper') {
+    wetMachine = machineDef;
   }
   else {
     wetMachine = Machine.build(_.extend({
