@@ -201,6 +201,7 @@ module.exports = function runMachineAsScript(opts){
             !_.isUndefined(liveMachine.exits.success.like) ||
             !_.isUndefined(liveMachine.exits.success.itemOf)
           ) {
+            // TODO: support json-encoded output vs colors
             console.log(util.inspect(output, {depth: null, colors: true}));
           }
         }

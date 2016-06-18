@@ -3,7 +3,7 @@
   "version": "3.0.0",
   "description": "Run a machine as a command-line script.",
   "scripts": {
-    "test": "node ./node_modules/mocha/bin/mocha"
+    "test": "node ./node_modules/mocha/bin/mocha test"
   },
   "bin": {
     "machine-as-script": "./bin/machine-as-script.js"
@@ -18,13 +18,13 @@
   "dependencies": {
     "chalk": "0.5.1",
     "commander": "2.6.0",
-    "lodash": "^3.8.0",
-    "machine": "12.1.0",
-    "rttc": "^8.1.7",
+    "lodash": "3.10.1",
+    "machine": "^12.2.4",
+    "rttc": "^9.7.0",
     "yargs": "3.4.5"
   },
   "devDependencies": {
-    "machinepack-process": "^1.4.0",
+    "machinepack-process": "^2.0.2",
     "mocha": "^2.2.4"
   },
   "repository": {
