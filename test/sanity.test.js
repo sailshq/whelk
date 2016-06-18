@@ -11,6 +11,7 @@ var Process = require('machinepack-process');
 describe('running a script', function (){
 
   describe('that passes an empty machine def to `machine-as-script`', function (){
+    this.slow(1400);
 
     it('should not fail', function (done){
 

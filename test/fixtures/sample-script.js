@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
  // wha_someRequiredString='3' wha_someRequiredJSON='[]' node test/sample-script.js
 
 var asScript = require('../../');
