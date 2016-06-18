@@ -8,7 +8,7 @@ Useful for running jobs (cron, Heroku scheduler), automating repetitive tasks (G
 $ npm install machine-as-script --save
 ```
 
-> New to Node?  Check out the tutorial on [Getting Started With `machine-as-script`](https://www.npmjs.com/package/machine-as-script/tutorial).
+> New to Node?  Check out [**Getting Started With machine-as-script** from NPM](https://www.npmjs.com/package/machine-as-script/tutorial).
 
 
 ## Usage
