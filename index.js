@@ -36,6 +36,7 @@ module.exports = function runMachineAsScript(opts){
   }
   else {
     machineDef = opts.machine;
+    delete opts.machine;
   }
 
   // Tolerate if no machine was provided (this is just for backwards compatibility-- should be deprecated.)
