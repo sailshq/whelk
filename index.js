@@ -75,7 +75,7 @@ module.exports = function runMachineAsScript(opts){
         }
       },
       fn: function (inputs, exits){
-        exits.error(new Error('Not implemented yet!'));
+        exits.error(new Error('Not implemented yet! (This is a default `fn` injected by `machine-as-script`.)'));
       }
     },machineDef));
   }
@@ -216,8 +216,10 @@ module.exports = function runMachineAsScript(opts){
     }
   });
 
-  // Set a telltale property to allow `bin/machine-as-script` to provide
-  // better error messages.
+  // Set a telltale property to allow `bin/machine-as-script` to be more
+  // intelligent about catching wet machine instances which are already wrapped
+  // in a call to machine-as-script.  Realistically, this rarely matters since
+  // script modules don't normally export anything, but it's here just in case.
   liveMachine._telltale = 'machine-as-script';
 
   // Return the ready-to-exec machine.
