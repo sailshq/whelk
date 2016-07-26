@@ -24,6 +24,16 @@ if (_.isUndefined(yargs.argv._[0])) {
 }
 
 var pathToMachineDef = path.resolve(yargs.argv._[0]);
-asScript({
-  machine: require(pathToMachineDef)
-}).exec();
+var wetOrDryMachine = require(pathToMachineDef);
+
+// If the module at the specified path exports a wet machine that is already wrapped
+// in a call machine-as-script, then just call `.exec()` on it.
+if (wetOrDryMachine._telltale === 'machine-as-script') {
+  wetOrDryMachine.exec();
+}
+// Otherwise, wrap it with machine-as-script, then exec() it.
+else {
+  asScript({
+    machine: wetOrDryMachine
+  }).exec();
+}

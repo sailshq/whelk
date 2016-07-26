@@ -216,6 +216,10 @@ module.exports = function runMachineAsScript(opts){
     }
   });
 
+  // Set a telltale property to allow `bin/machine-as-script` to provide
+  // better error messages.
+  liveMachine._telltale = 'machine-as-script';
+
   // Return the ready-to-exec machine.
   return liveMachine;
 
