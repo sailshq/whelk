@@ -261,10 +261,25 @@ module.exports = function runMachineAsScript(opts){
   // Set some default exit handlers
   liveMachine.setExits(callbacks);
 
-
-  // Now intercept `.exec()` to take care of sails.lower(), if relevant.
+  // Now, if relevant, set up two handlers:
+  //   • before actually running the machine fn, interject logic to take care of sails.load()
+  //   • before triggering exit callbacks, interject logic to take care of sails.lower()
   // (we have to do this because any of the callbacks above _could_ be overridden!)
-  // TODO
+  if (!_.isUndefined(sailsApp)) {
+    // TODO: make these LCs actually work.
+    liveMachine.beforeRunning(function (done){
+      sailsApp.load(function (err) {
+        if (err) { return done(err); }
+        else { return done(); }
+      });
+    });
+    liveMachine.beforeExiting(function (done){
+      sailsApp.lower(function (err) {
+        if (err) { return done(err); }
+        else { return done(); }
+      });
+    });
+  }
 
   // If we're managing a Sails app instance for this script, then pass through `env.sails`.
   if (!_.isUndefined(sailsApp)) {
