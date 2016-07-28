@@ -83,24 +83,20 @@ module.exports = function runMachineAsScript(opts){
 
   // Finally, before moving on, we check the `habitat` and potentially provide
   // access to `env.sails`.
+  var sailsApp;
   if (wetMachine.habitat === 'request') {
     throw new Error('The target machine defintion declares a dependency on the `request` habitat, which cannot be provided via the command-line interface.  This machine cannot be run using machine-as-script.');
   }
   else if (wetMachine.habitat === 'sails') {
-    // If the machine depends on the Sails habitat, we'll attempt to load
-    // (but not lift) the Sails app in the current working directory.
-    // If it works, then we'll run the script, providing it with `env.sails`.
-    // Then regardless of how the script exits, we'll call `sails.lower()`
-    // before continuing.
-    var sails;
-    try { sails = require('sails'); }
+    // If the machine depends on the Sails habitat, then we'll attempt to require `sails`.
+    // If this works, then down below, we'll attempt to load (but not lift) the Sails app in the current working directory.
+    // If it works, then we'll run the script, providing it with `env.sails`. After that, regardless of how the script exits,
+    // we'll call `sails.lower()` to clean up.
+    try { sailsApp = require('sails'); }
     catch (e) {
       if (e.code === 'MODULE_NOT_FOUND') { throw new Error('The target machine defintion declares a dependency on the `sails` habitat.  Attempted to `require(\'sails\')` from inside of machine-as-script, but it could not be located.  Details:'+e.stack); }
       else { throw new Error('The target machine defintion declares a dependency on the `sails` habitat.  Attempted to `require(\'sails\')` from inside of machine-as-script, but something unexpected happened.  Error details:'+e.stack); }
     }
-
-    throw new Error('Support for automatically loading Sails is not yet implemented in machine-as-script.');
-    // TODO: implement
   }
 
 
@@ -213,37 +209,89 @@ module.exports = function runMachineAsScript(opts){
   // Set input values from CLI args/opts
   var liveMachine = wetMachine(inputConfiguration);
 
-  // Set some default exit handlers
-  liveMachine.setExits({
-    error: function(err) {
-      // console.error(chalk.red('Unexpected error occurred:\n'), err);
-      console.log(chalk.red('Something went wrong:'));
-      console.error(err.stack ? chalk.gray(err.stack) : err);
-    },
-    success: function(output) {
 
-      // If output is expected, then log it.
-      if (!_.isUndefined(output)) {
-        try {
-          if (
-            !_.isUndefined(liveMachine.exits.success.example) ||
-            _.isFunction(liveMachine.exits.success.getExample) ||
-            !_.isUndefined(liveMachine.exits.success.like) ||
-            !_.isUndefined(liveMachine.exits.success.itemOf)
-          ) {
-            // TODO: support json-encoded output vs colors
-            console.log(util.inspect(output, {depth: null, colors: true}));
-          }
-        }
-        catch (e) { /* fail silently if anything goes awry */ }
+  // Now build up a default handler callback for each exit.
+  // (Note that these can be overridden though!)
+  var callbacks = {};
+  // We use a local variable (`alreadyExited`) as a spinlock.
+  var alreadyExited;
+  _.each(_.keys(wetMachine.exits), function builtExitCallback(exitCodeName){
+
+    // Build a callback for this exit that sends the appropriate response.
+    callbacks[exitCodeName] = function respondApropos(output){
+      // This spinlock protects against the machine calling more than one
+      // exit, or the same exit twice.
+      if (alreadyExited) { return; }
+      alreadyExited = true;
+
+      if (exitCodeName === 'error') {
+        console.error(chalk.red('Unexpected error occurred:\n'), output);
+        console.error(output.stack ? chalk.gray(output.stack) : output);
         return;
       }
+      else if (exitCodeName === 'success') {
+        if (_.isUndefined(output)) {
+          try {
+            if (
+              !_.isUndefined(liveMachine.exits.success.example) ||
+              _.isFunction(liveMachine.exits.success.getExample) ||
+              !_.isUndefined(liveMachine.exits.success.like) ||
+              !_.isUndefined(liveMachine.exits.success.itemOf)
+            ) {
+              // TODO: support json-encoded output vs colors
+              console.log(util.inspect(output, {depth: null, colors: true}));
+            }
+          }
+          catch (e) { /* fail silently if anything goes awry */ }
+        }
+        // Otherwise, output is expected.  So log it.
+        else {
+          console.log(chalk.green('OK.'));
+        }
+      }
+      // Miscellaneous exit.
+      else {
+        console.log(chalk.cyan('Something went wrong:'));
+        console.error(output.stack ? chalk.gray(output.stack) : output);
+      }
+    };//</callback definition>
+  });//</each exit>
 
-      // Otherwise, log a generic message.
-      console.log(chalk.green('OK.'));
 
+  // Set some default exit handlers
+  liveMachine.setExits(callbacks);
+
+
+  // Now intercept `.exec()` to take care of sails.lower(), if relevant.
+  // (we have to do this because any of the callbacks above _could_ be overridden!)
+  var _originalExecBeforeItWasChangedForUseByMachineAsScript = liveMachine.exec;
+  liveMachine.exec = function () {
+    var args = Array.prototype.slice.call(arguments);
+
+    // If we're not managing a Sails app instance for this script, then just do the normal thing.
+    if (_.isUndefined(sailsApp)) {
+      _originalExecBeforeItWasChangedForUseByMachineAsScript.apply(liveMachine, args);
+      return;
     }
-  });
+
+    // --•
+    // Otherwise, we need to load Sails first, then lower it afterwards.
+    sailsApp.load(function (err){
+      if (err) {
+        throw err;
+      }
+      _originalExecBeforeItWasChangedForUseByMachineAsScript.apply(liveMachine, args);
+
+
+      });//</after sails.lower()>
+    });//</after sails.load()>
+  };//</definition of our .exec() override>
+
+
+  // If we're managing a Sails app instance for this script, then pass through `env.sails`.
+  if (!_.isUndefined(sailsApp)) {
+    liveMachine.setEnv({ sails: sailsApp });
+  }
 
   // Set a telltale property to allow `bin/machine-as-script` to be more
   // intelligent about catching wet machine instances which are already wrapped
