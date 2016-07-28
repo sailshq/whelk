@@ -264,29 +264,7 @@ module.exports = function runMachineAsScript(opts){
 
   // Now intercept `.exec()` to take care of sails.lower(), if relevant.
   // (we have to do this because any of the callbacks above _could_ be overridden!)
-  var _originalExecBeforeItWasChangedForUseByMachineAsScript = liveMachine.exec;
-  liveMachine.exec = function () {
-    var args = Array.prototype.slice.call(arguments);
-
-    // If we're not managing a Sails app instance for this script, then just do the normal thing.
-    if (_.isUndefined(sailsApp)) {
-      _originalExecBeforeItWasChangedForUseByMachineAsScript.apply(liveMachine, args);
-      return;
-    }
-
-    // --•
-    // Otherwise, we need to load Sails first, then lower it afterwards.
-    sailsApp.load(function (err){
-      if (err) {
-        throw err;
-      }
-      _originalExecBeforeItWasChangedForUseByMachineAsScript.apply(liveMachine, args);
-
-
-      });//</after sails.lower()>
-    });//</after sails.load()>
-  };//</definition of our .exec() override>
-
+  // TODO
 
   // If we're managing a Sails app instance for this script, then pass through `env.sails`.
   if (!_.isUndefined(sailsApp)) {
