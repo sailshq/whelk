@@ -81,6 +81,35 @@ module.exports = function runMachineAsScript(opts){
   }
 
 
+  // Finally, before moving on, we check the `habitat` and potentially provide
+  // access to `env.sails`.
+  if (wetMachine.habitat === 'request') {
+    throw new Error('The target machine defintion declares a dependency on the `request` habitat, which cannot be provided via the command-line interface.  This machine cannot be run using machine-as-script.');
+  }
+  else if (wetMachine.habitat === 'sails') {
+    // If the machine depends on the Sails habitat, we'll attempt to load
+    // (but not lift) the Sails app in the current working directory.
+    // If it works, then we'll run the script, providing it with `env.sails`.
+    // Then regardless of how the script exits, we'll call `sails.lower()`
+    // before continuing.
+    var sails;
+    try { sails = require('sails'); }
+    catch (e) {
+      if (e.code === 'MODULE_NOT_FOUND') { throw new Error('The target machine defintion declares a dependency on the `sails` habitat.  Attempted to `require(\'sails\')` from inside of machine-as-script, but it could not be located.  Details:'+e.stack); }
+      else { throw new Error('The target machine defintion declares a dependency on the `sails` habitat.  Attempted to `require(\'sails\')` from inside of machine-as-script, but something unexpected happened.  Error details:'+e.stack); }
+    }
+
+    throw new Error('Support for automatically loading Sails is not yet implemented in machine-as-script.');
+    // TODO: implement
+  }
+
+
+
+  // ======================================================================
+  // Now we'll put together the configuration for our wet machine instance.
+  // (using CLI opts, serial CLI args, and/or env vars)
+  // ======================================================================
+
   // Configure CLI usage helptext and set up commander
   program.usage('[options]');
 
