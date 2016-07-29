@@ -103,18 +103,14 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
       if (!_.isObject(opts.sails) || opts.sails.constructor.name !== 'Sails') {
         throw new Error('The supposed Sails app instance provided as `sails` seems a little sketchy.  Make sure you are doing `sails: require(\'sails\')`.');
       }
+      // Down below, we'll attempt to load (but not lift) the Sails app in the current working directory.
+      // If it works, then we'll run the script, providing it with `env.sails`.  After that, regardless of
+      // how the script exits, we'll call `sails.lower()` to clean up.
       sailsApp = opts.sails;
     }
-    // If no `sails` was provided to machine-as-script, then we'll attempt to require it.
+    // If no `sails` was provided to machine-as-script, then we'll throw an error.
     else {
-      // If this works, then down below, we'll attempt to load (but not lift) the Sails app in the current working directory.
-      // If it works, then we'll run the script, providing it with `env.sails`. After that, regardless of how the script exits,
-      // we'll call `sails.lower()` to clean up.
-      try { sailsApp = require('sails'); }
-      catch (e) {
-        if (e.code === 'MODULE_NOT_FOUND') { throw new Error('The target machine defintion declares a dependency on the `sails` habitat, but no `sails` app instance was provided as a top-level option to machine-as-script.  As a hail-mary, attempted to `require(\'sails\')` from inside of machine-as-script, but it could not be located.  Details: '+e.stack); }
-        else { throw new Error('The target machine defintion declares a dependency on the `sails` habitat, but no `sails` app instance was provided as a top-level option to machine-as-script.  As a hail-mary, attempted to `require(\'sails\')` from inside of machine-as-script, but something unexpected happened.  Error details: '+e.stack); }
-      }
+      throw new Error('The target machine defintion declares a dependency on the `sails` habitat, but no `sails` app instance was provided as a top-level option to machine-as-script.  Make sure this script module is doing: `sails: require(\'sails\')`');
     }
   }
 
@@ -285,7 +281,16 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
 
     // If we're not managing a Sails app instance for this script, then just do the normal thing.
     if (_.isUndefined(sailsApp)) {
-      _originalExecBeforeItWasChangedForUseByMachineAsScript.apply(liveMachine, args);
+      if (_.isObject(args[0])) {
+        var combinedCbs = _.extend({}, callbacks, args[0]);
+        _originalExecBeforeItWasChangedForUseByMachineAsScript.apply(liveMachine, [combinedCbs]);
+      }
+      else if (_.isFunction(args[0])) {
+        _originalExecBeforeItWasChangedForUseByMachineAsScript.apply(liveMachine, [args[0]]);
+      }
+      else {
+        _originalExecBeforeItWasChangedForUseByMachineAsScript.apply(liveMachine, [callbacks]);
+      }
       return;
     }
 
