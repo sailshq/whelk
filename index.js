@@ -261,25 +261,75 @@ module.exports = function runMachineAsScript(opts){
   // Set some default exit handlers
   liveMachine.setExits(callbacks);
 
-  // Now, if relevant, set up two handlers:
-  //   • before actually running the machine fn, interject logic to take care of sails.load()
-  //   • before triggering exit callbacks, interject logic to take care of sails.lower()
+
+  // Now intercept `.exec()` to take care of sails.lower(), if relevant.
   // (we have to do this because any of the callbacks above _could_ be overridden!)
-  if (!_.isUndefined(sailsApp)) {
-    // TODO: make these LCs actually work.
-    liveMachine.beforeRunning(function (done){
-      sailsApp.load(function (err) {
-        if (err) { return done(err); }
-        else { return done(); }
-      });
-    });
-    liveMachine.beforeExiting(function (done){
-      sailsApp.lower(function (err) {
-        if (err) { return done(err); }
-        else { return done(); }
-      });
-    });
-  }
+  var _originalExecBeforeItWasChangedForUseByMachineAsScript = liveMachine.exec;
+  liveMachine.exec = function () {
+    var args = Array.prototype.slice.call(arguments);
+
+    // If we're not managing a Sails app instance for this script, then just do the normal thing.
+    if (_.isUndefined(sailsApp)) {
+      _originalExecBeforeItWasChangedForUseByMachineAsScript.apply(liveMachine, args);
+      return;
+    }
+
+    // --• Otherwise, we need to load Sails first, then lower it afterwards.
+    // Load the Sails app.
+    sailsApp.load(function (err){
+      if (err) {
+        throw new Error('This script relies on access to Sails, but when attempting to load this Sails app automatically, an error occurred.  Details: '+err.stack);
+      }
+
+      // Run underlying .exec(), but intercept it to tear down the Sails app.
+      _originalExecBeforeItWasChangedForUseByMachineAsScript.apply(liveMachine, function (sbErr, successResult){
+        sailsApp.lower(function (sailsLowerErr) {
+          if (sailsLowerErr) {
+            console.warn('This script relies on access to Sails, but when attempting to lower this Sails app automatically after running the script, an error occurred.  Details:',sailsLowerErr.stack);
+          }
+
+          // Success
+          if (!sbErr) {
+            if (_.isObject(args[0])) {
+              if (args[0].success) { args[0].success(successResult); }
+              else { callbacks.success(successResult); }
+            }
+            else if (_.isFunction(args[0])) {
+              args[0](undefined, successResult);
+            }
+            else { callbacks.success(successResult); }
+          }
+          // Some other exit
+          else if (sbErr.exit && sbErr.exit !== 'error') {
+            if (_.contains(_.keys(callbacks), sbErr.exit)) {
+            }
+            if (_.isObject(args[0])) {
+              if (args[0].error) { args[0].error(sbErr); }
+              else { callbacks.error(sbErr); }
+            }
+            else if (_.isFunction(args[0])) {
+              args[0](sbErr);
+            }
+            else { callbacks.error(sbErr); }
+          }
+          // Catchall error
+          else {
+            if (_.isObject(args[0])) {
+              if (args[0].error) { args[0].error(sbErr); }
+              else { callbacks.error(sbErr); }
+            }
+            else if (_.isFunction(args[0])) {
+              args[0](sbErr);
+            }
+            else { callbacks.error(sbErr); }
+          }
+
+        });//</after sails.lower()>
+      });//</after calling underlying .exec()>
+
+    });//</after sails.load()>
+  };//</definition of our .exec() override>
+
 
   // If we're managing a Sails app instance for this script, then pass through `env.sails`.
   if (!_.isUndefined(sailsApp)) {
