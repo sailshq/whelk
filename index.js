@@ -13,34 +13,43 @@ var rttc = require('rttc');
 
 
 /**
+ * asScript()
  *
- * @param  {Dictionary|Machine} opts
- *         @property {Dictionary|Machine} opts.machine
- *         @property {Array} opts.args
- *         @property {Array} opts.envVarNamespace
- *         (see readme for more information)
+ * (See README.md for more information.)
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ * @param  {Dictionary|Machine} optsOrMachineDef
+ *         @property {Dictionary?} machine
+ *         @property {Array?} args
+ *         @property {Array?} envVarNamespace
+ *         @property {SailsApp?} sails
  *
- * @return {Machine}     [a machine instance]
+ * @return {Machine}
+ *         A live machine instance, but warped to accept CLI args/opts & env vars.
+ *         Also granted other special abilities.
  */
-module.exports = function runMachineAsScript(opts){
+module.exports = function runMachineAsScript(optsOrMachineDef){
 
-  opts = opts||{};
+  optsOrMachineDef = optsOrMachineDef||{};
 
   // Use either `opts` or `opts.machine` as the machine definition
   // If `opts.machine` is truthy, we'll use that as the machine definition.
   // Otherwise, we'll understand the entire `opts` dictionary to be the machine
   // definition.
   var machineDef;
-  if (!opts.machine) {
-    machineDef = opts;
+  var opts;
+  var MISC_OPTIONS = ['args', 'envVarNamespace', 'sails'];
+  if (!optsOrMachineDef.machine) {
+    machineDef = optsOrMachineDef;
+    opts = _.pick(optsOrMachineDef, MISC_OPTIONS);
   }
   else {
-    machineDef = opts.machine;
-    delete opts.machine;
+    machineDef = optsOrMachineDef.machine;
+    opts = _.pick(optsOrMachineDef, MISC_OPTIONS);
   }
 
-  // Tolerate if no machine was provided (this is just for backwards compatibility-- should be deprecated.)
-  machineDef = machineDef || {};
+  if (!_.isObject(machineDef)) {
+    throw new Error('Consistency violation: Machine definition must be provided as a dictionary.');
+  }
 
   // Set up namespace for environment variables.
   var envVarNamespace = '___';
@@ -88,14 +97,24 @@ module.exports = function runMachineAsScript(opts){
     throw new Error('The target machine defintion declares a dependency on the `request` habitat, which cannot be provided via the command-line interface.  This machine cannot be run using machine-as-script.');
   }
   else if (wetMachine.habitat === 'sails') {
-    // If the machine depends on the Sails habitat, then we'll attempt to require `sails`.
-    // If this works, then down below, we'll attempt to load (but not lift) the Sails app in the current working directory.
-    // If it works, then we'll run the script, providing it with `env.sails`. After that, regardless of how the script exits,
-    // we'll call `sails.lower()` to clean up.
-    try { sailsApp = require('sails'); }
-    catch (e) {
-      if (e.code === 'MODULE_NOT_FOUND') { throw new Error('The target machine defintion declares a dependency on the `sails` habitat.  Attempted to `require(\'sails\')` from inside of machine-as-script, but it could not be located.  Details:'+e.stack); }
-      else { throw new Error('The target machine defintion declares a dependency on the `sails` habitat.  Attempted to `require(\'sails\')` from inside of machine-as-script, but something unexpected happened.  Error details:'+e.stack); }
+
+    // If the machine depends on the Sails habitat, then we'll attempt to use the provided version of `sails`.
+    if (opts.sails) {
+      if (!_.isObject(opts.sails) || opts.sails.constructor.name !== 'Sails') {
+        throw new Error('The supposed Sails app instance provided as `sails` seems a little sketchy.  Make sure you are doing `sails: require(\'sails\')`.');
+      }
+      sailsApp = opts.sails;
+    }
+    // If no `sails` was provided to machine-as-script, then we'll attempt to require it.
+    else {
+      // If this works, then down below, we'll attempt to load (but not lift) the Sails app in the current working directory.
+      // If it works, then we'll run the script, providing it with `env.sails`. After that, regardless of how the script exits,
+      // we'll call `sails.lower()` to clean up.
+      try { sailsApp = require('sails'); }
+      catch (e) {
+        if (e.code === 'MODULE_NOT_FOUND') { throw new Error('The target machine defintion declares a dependency on the `sails` habitat, but no `sails` app instance was provided as a top-level option to machine-as-script.  As a hail-mary, attempted to `require(\'sails\')` from inside of machine-as-script, but it could not be located.  Details: '+e.stack); }
+        else { throw new Error('The target machine defintion declares a dependency on the `sails` habitat, but no `sails` app instance was provided as a top-level option to machine-as-script.  As a hail-mary, attempted to `require(\'sails\')` from inside of machine-as-script, but something unexpected happened.  Error details: '+e.stack); }
+      }
     }
   }
 
@@ -258,10 +277,6 @@ module.exports = function runMachineAsScript(opts){
   });//</each exit>
 
 
-  // Set some default exit handlers
-  liveMachine.setExits(callbacks);
-
-
   // Now intercept `.exec()` to take care of sails.lower(), if relevant.
   // (we have to do this because any of the callbacks above _could_ be overridden!)
   var _originalExecBeforeItWasChangedForUseByMachineAsScript = liveMachine.exec;
@@ -282,10 +297,11 @@ module.exports = function runMachineAsScript(opts){
       }
 
       // Run underlying .exec(), but intercept it to tear down the Sails app.
-      _originalExecBeforeItWasChangedForUseByMachineAsScript.apply(liveMachine, function (sbErr, successResult){
+      _originalExecBeforeItWasChangedForUseByMachineAsScript.apply(liveMachine, [function (sbErr, successResult){
         sailsApp.lower(function (sailsLowerErr) {
           if (sailsLowerErr) {
             console.warn('This script relies on access to Sails, but when attempting to lower this Sails app automatically after running the script, an error occurred.  Details:',sailsLowerErr.stack);
+            console.warn('Continuing to run the appropriate exit callback anyway...');
           }
 
           // Success
@@ -299,33 +315,22 @@ module.exports = function runMachineAsScript(opts){
             }
             else { callbacks.success(successResult); }
           }
-          // Some other exit
-          else if (sbErr.exit && sbErr.exit !== 'error') {
-            if (_.contains(_.keys(callbacks), sbErr.exit)) {
-            }
-            if (_.isObject(args[0])) {
-              if (args[0].error) { args[0].error(sbErr); }
-              else { callbacks.error(sbErr); }
-            }
-            else if (_.isFunction(args[0])) {
-              args[0](sbErr);
-            }
-            else { callbacks.error(sbErr); }
-          }
-          // Catchall error
+          // Some other exit (or catchall error)
           else {
-            if (_.isObject(args[0])) {
-              if (args[0].error) { args[0].error(sbErr); }
-              else { callbacks.error(sbErr); }
+            if (_.isObject(args[0]) && _.contains(_.keys(args[0]), sbErr.exit)) {
+              args[0][sbErr.exit](sbErr.output);
             }
             else if (_.isFunction(args[0])) {
               args[0](sbErr);
+            }
+            else if (_.contains(_.keys(callbacks), sbErr.exit)) {
+              callbacks[sbErr.exit](sbErr.output);
             }
             else { callbacks.error(sbErr); }
           }
 
         });//</after sails.lower()>
-      });//</after calling underlying .exec()>
+      }]);//</after calling underlying .exec()>
 
     });//</after sails.load()>
   };//</definition of our .exec() override>
