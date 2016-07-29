@@ -2,7 +2,8 @@
 
 Run any machine as a command-line script.
 
-Useful for running jobs (cron, Heroku scheduler), automating repetitive tasks (Grunt, gulp), writing one-off scripts (NPM, Chef), and building production-ready tools with command-line interfaces (e.g. `treeline`, `machinepack`).  Suppots _serial command-line arguments_, command-line opts (`--`), and environment variables.
+Useful for running jobs (cron, Heroku scheduler), automating repetitive tasks (Grunt, gulp), writing one-off scripts (NPM, Chef), and building production-ready tools with command-line interfaces (e.g. `treeline`, `machinepack`).  Supports _serial command-line arguments_, command-line opts (`--`), and environment variables.
+
 
 ```sh
 $ npm install machine-as-script --save
@@ -37,6 +38,7 @@ $ node ./add-numbers.js --a=4 --b=5
 > Note that the machine definition you provide here doesn't have to come from an already-published machinepack-- it can be required locally from your project, or declared inline.
 
 
+
 ##### Assorted examples
 
 It's all well and good to build command-line scripts that do simple arithmetic, but what about something more practical?  Here are a few real-world examples of `machine-as-script` in practice:
@@ -46,6 +48,18 @@ It's all well and good to build command-line scripts that do simple arithmetic, 
 + https://github.com/treelinehq/treeline/blob/32b8760504c46e9816ec89a1dc8e301e0c34f62a/bin/treeline-browse.js
 + https://github.com/treelinehq/treeline/blob/763b293615e4b26339998a1384919cf958402ba8/bin/treeline-login.js
 
+
+
+## Available Options
+
+Aside from the [normal properties that go into a Node Machine definition](http://node-machine.org/spec), the following additional options are supported:
+
+| Option            | Type            | Description                                            |
+|:------------------|-----------------|:-------------------------------------------------------|
+| `machine`         | ((dictionary?)) | If specified, `machine-as-script` will use this as the machine definition.  Otherwise by default, it expects the machine definition to be passed in at the top-level. In that case, the non-standard (machine-as-script-specific) options are omitted when the machine is built).
+| `args`            | ((array?))      | The names of inputs, in order, to use for handling serial CLI arguments (more on that [below](#using-serial-cli-arguments)).
+| `envVarNamespace` | ((string?))     | The namespace to use when mapping environment variables to runtime arguments for particular inputs (more on that [below](#using-environment-variables)).
+| `sails`           | ((SailsApp?))   | Only relevant if the machine def declares `habitat: 'sails'`.  This is the Sails app instance that will be provided to this machine as `env.sails`.  In most cases, if you are using this, you'll want to set it to `require('sails').  The Sails app instance will be automatically loaded before running the machine, and automatically lowered as soon as the machine exits.
 
 
 
@@ -77,6 +91,7 @@ $ node ./add-numbers.js 4 5
 
 If you don't already have an input named `args`, when using machine-as-action, your machine's `fn` will receive an array of serial command-line arguments in `inputs.args`.  **THIS IS AN EXPERIMENTAL FEATURE AND COULD CHANGE AT ANY TIME WITHOUT BACKWARDS COMPATIBILITY!!**
 
+> Note: In a future release, this will likely change to rely on either something like `env.args` or to use a new option to assign an input for this purpose (similar to machine-as-action's `urlWildcardSuffix`)
 
 
 
@@ -243,4 +258,4 @@ For more help, check out the [node-machine newsgroup](https://groups.google.com/
 
 ## License
 
-MIT &copy; 2015 Mike McNeil
+MIT &copy; 2015-2016 Mike McNeil, The Treeline Co.
