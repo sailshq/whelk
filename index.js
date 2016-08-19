@@ -73,13 +73,15 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
     throw new Error('Consistency violation: Machine definition must be provided as a dictionary.');
   }
 
+  //  ╦  ╦╔═╗╦  ╦╔╦╗╔═╗╔╦╗╔═╗  ┌─┐┌─┐┌┬┐┬┌─┐┌┐┌┌─┐
+  //  ╚╗╔╝╠═╣║  ║ ║║╠═╣ ║ ║╣   │ │├─┘ │ ││ ││││└─┐
+  //   ╚╝ ╩ ╩╩═╝╩═╩╝╩ ╩ ╩ ╚═╝  └─┘┴   ┴ ┴└─┘┘└┘└─┘
   // Validate optional things.
   _.each(opts, function (optVal, optKey) {
     // Ignore opts with undefined values.
     if (_.isUndefined(optVal)) { return; }
 
     switch (optKey) {
-
 
       case 'args': (function (){
         if (!_.isArray(opts.args)) {
@@ -118,11 +120,23 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   });
 
 
+  //  ┌─┐┌─┐┌┬┐  ╔╦╗╔═╗╔═╗╔═╗╦ ╦╦ ╔╦╗╔═╗  ┌─┐┌─┐┬─┐  ┌─┐┌─┐┌┬┐┬┌─┐┌┐┌┌─┐
+  //  └─┐├┤  │    ║║║╣ ╠╣ ╠═╣║ ║║  ║ ╚═╗  ├┤ │ │├┬┘  │ │├─┘ │ ││ ││││└─┐
+  //  └─┘└─┘ ┴   ═╩╝╚═╝╚  ╩ ╩╚═╝╩═╝╩ ╚═╝  └  └─┘┴└─  └─┘┴   ┴ ┴└─┘┘└┘└─┘
   // Set up namespace for environment variables.
   var envVarNamespace = '___';
   if (_.isString(opts.envVarNamespace)) {
     envVarNamespace = opts.envVarNamespace;
   }
+
+
+  // We'll use this local variable (`envToSet`) to hold the `env` dictionary we're building up below.
+  // At the very end, we'll use this again when we build the dictionary to send to `setEnv`)
+  //
+  // > Remember: this `env` is _completely_ different from system "environment variables"!
+  // > It is more closely related to the notion of "habitat" in the machine spec.
+  // > See http://node-machine.org for more details.
+  var envToSet = {};
 
 
 
@@ -212,24 +226,26 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   // Finally, before moving on, we check the `habitat`.  Since we'll potentially
   // provide access to `env.sails`, we need to make sure a valid Sails app was
   // passed in.
-  var sailsApp;
   if (wetMachine.habitat === 'request') {
     throw new Error('The target machine defintion declares a dependency on the `request` habitat, which cannot be provided via the command-line interface.  This machine cannot be run using machine-as-script.');
   }
   // If the machine depends on the Sails habitat:
   else if (wetMachine.habitat === 'sails') {
 
-    // ...then we'll attempt to use the provided version of `sails`.
-    if (opts.sails) {
-      // Down below, we'll attempt to load (but not lift) the Sails app in the current working directory.
-      // If it works, then we'll run the script, providing it with `env.sails`.  After that, regardless of
-      // how the script exits, we'll call `sails.lower()` to clean up.
-      sailsApp = opts.sails;
-    }
+    // ...then we'll want to attempt to use the provided version of `sails` (a SailsApp instance.)
     // If no `sails` was provided to machine-as-script, then we'll throw an error.
-    else {
+    if (!opts.sails) {
       throw new Error('The target machine defintion declares a dependency on the `sails` habitat, but no `sails` app instance was provided as a top-level option to machine-as-script.  Make sure this script module is doing: `sails: require(\'sails\')`');
     }
+
+    // Down below, we'll attempt to load (but not lift) the Sails app in the current working directory.
+    // If it works, then we'll run the script, providing it with `env.sails`.  After that, regardless of
+    // how the script exits, we'll call `sails.lower()` to clean up.
+    //
+    // In the mean time, we'll go ahead and save a reference to this Sails app on `envToSet`, since we'll
+    // be passing it into the machine instance's `fn` as `env.sails` (via `.setEnv()`)
+    envToSet.sails = opts.sails;
+
   }//</if (machine depends on `sails` habitat)>
 
 
@@ -329,15 +345,31 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   //   │ │ │  │ ┬├┤  │   ├─┤  ║  ║╚╗╔╝║╣   ║║║╠═╣║  ╠═╣║║║║║╣   ││││└─┐ │ ├─┤││││  ├┤
   //   ┴ └─┘  └─┘└─┘ ┴   ┴ ┴  ╩═╝╩ ╚╝ ╚═╝  ╩ ╩╩ ╩╚═╝╩ ╩╩╝╚╝╚═╝  ┴┘└┘└─┘ ┴ ┴ ┴┘└┘└─┘└─┘o
 
-  // Build runtime input values from CLI options and args
+  // Build runtime input values from CLI options and args.
   var inputConfiguration = {};
 
   // Supply CLI options
+  // (the ones that start with `-` or `--`)
+  // =======================================================================================
   _.extend(inputConfiguration, yargs.argv);
   delete inputConfiguration._;
   delete inputConfiguration.$0;
 
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // TODO: make the following usage work in the way you would expect:
+  // ```
+  // kit exclaim --verbose 'my sweet code comment' wat --width '37'
+  // ```
+  // Currently, `'my sweet code comment'` is parsed as "verbose",
+  // even though "verbose" should really be a boolean, and so that
+  // string should be interpreted as a serial CLI arg (not an opt).
+  //
+  // (see https://github.com/yargs/yargs#booleankey for more info)
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
   // Supply environment variables
+  // =======================================================================================
   _.each(wetMachine.inputs, function (inputDef, inputName){
     var envVarData = process.env[envVarNamespace + inputName];
     if (_.isUndefined(envVarData)) {
@@ -349,18 +381,34 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
     inputConfiguration[inputName] = envVarData;
   });
 
-  // Include a special `args` input for convenience--
-  // but note that this is an experimental feature that could change.
-  if (_.isArray(yargs.argv._)) {
-    inputConfiguration.args = yargs.argv._;
-  }
 
-  // Supply argv CLI arguments if `opts.args` was provided.
+  // Supply serial CLI arguments
+  // (the kind that come one after another -- i.e. they don't start with `-` or `--`)
+  // =======================================================================================
+  envToSet.commandLineArgs = _.isArray(yargs.argv._) ? yargs.argv._ : [];
+  // (^^ Note that we always supply `env.commandLineArgs`.)
+
+  // But if `opts.args` was provided, then we ALSO iterate through the serial CLI args
+  // and provide them as values for the appropriate inputs (i.e. according to the order
+  // of code names in `opts.args`.)
   if (_.isArray(opts.args)) {
     _.each(opts.args, function (inputName, i){
-      inputConfiguration[inputName] = yargs.argv._[i];
+      inputConfiguration[inputName] = envToSet.commandLineArgs[i];
     });
   }
+
+
+  // TODO: deprecate
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // Include a special `args` input for convenience--
+  // but note that this is an experimental feature that could change.
+  //
+  // UPDATE: THIS WILL BE DEPRECATED SOON.  USE `env.commandLineArgs` INSTEAD!!!
+  if (_.isArray(envToSet.commandLineArgs)) {
+    inputConfiguration.args = envToSet.commandLineArgs;// << will be deprecated
+  }
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 
   // Finally, loop through each of the input configurations and run `rttc.parseHuman()`.
   inputConfiguration = _.reduce(inputConfiguration, function (memo, val, inputName){
@@ -383,6 +431,11 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   // Set input values from CLI args/opts
   var liveMachine = wetMachine(inputConfiguration);
 
+  // TODO: remove this log
+  console.log('----------------------------------------------------------------------');
+  console.log('serial CLI args: ',envToSet.commandLineArgs);
+  console.log('input configuration that was parsed: ',inputConfiguration);
+  console.log('----------------------------------------------------------------------');
 
 
   //  ██████╗ ██╗   ██╗██╗██╗     ██████╗
@@ -485,7 +538,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
     var args = Array.prototype.slice.call(arguments);
 
     // If we're not managing a Sails app instance for this script, then just do the normal thing.
-    if (_.isUndefined(sailsApp)) {
+    if (_.isUndefined(envToSet.sails)) {
       if (_.isObject(args[0])) {
         var combinedCbs = _.extend({}, callbacks, args[0]);
         _originalExecBeforeItWasChangedForUseByMachineAsScript.apply(liveMachine, [combinedCbs]);
@@ -506,7 +559,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
     //  │  │ │├─┤ ││  └─┐├─┤││  └─┐
     //  ┴─┘└─┘┴ ┴─┴┘  └─┘┴ ┴┴┴─┘└─┘
     // Load the Sails app.
-    sailsApp.load(function (err){
+    envToSet.sails.load(function (err){
       if (err) {
         throw new Error('This script relies on access to Sails, but when attempting to load this Sails app automatically, an error occurred.  Details: '+err.stack);
       }
@@ -520,7 +573,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
         //  ┬  ┌─┐┬ ┬┌─┐┬─┐  ┌─┐┌─┐┬┬  ┌─┐
         //  │  │ ││││├┤ ├┬┘  └─┐├─┤││  └─┐
         //  ┴─┘└─┘└┴┘└─┘┴└─  └─┘┴ ┴┴┴─┘└─┘
-        sailsApp.lower(function (sailsLowerErr) {
+        envToSet.sails.lower(function (sailsLowerErr) {
           if (sailsLowerErr) {
             console.warn('This script relies on access to Sails, but when attempting to lower this Sails app automatically after running the script, an error occurred.  Details:',sailsLowerErr.stack);
             console.warn('Continuing to run the appropriate exit callback anyway...');
@@ -559,27 +612,31 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
 
 
 
-  //  ██████╗ ██████╗  ██████╗ ██╗   ██╗██╗██████╗ ███████╗
-  //  ██╔══██╗██╔══██╗██╔═══██╗██║   ██║██║██╔══██╗██╔════╝
-  //  ██████╔╝██████╔╝██║   ██║██║   ██║██║██║  ██║█████╗
-  //  ██╔═══╝ ██╔══██╗██║   ██║╚██╗ ██╔╝██║██║  ██║██╔══╝
-  //  ██║     ██║  ██║╚██████╔╝ ╚████╔╝ ██║██████╔╝███████╗
-  //  ╚═╝     ╚═╝  ╚═╝ ╚═════╝   ╚═══╝  ╚═╝╚═════╝ ╚══════╝
+
+  //     ███████╗███████╗████████╗███████╗███╗   ██╗██╗   ██╗     ██╗██╗
+  //     ██╔════╝██╔════╝╚══██╔══╝██╔════╝████╗  ██║██║   ██║    ██╔╝╚██╗
+  //     ███████╗█████╗     ██║   █████╗  ██╔██╗ ██║██║   ██║    ██║  ██║
+  //     ╚════██║██╔══╝     ██║   ██╔══╝  ██║╚██╗██║╚██╗ ██╔╝    ██║  ██║
+  //  ██╗███████║███████╗   ██║   ███████╗██║ ╚████║ ╚████╔╝     ╚██╗██╔╝
+  //  ╚═╝╚══════╝╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═══╝  ╚═══╝       ╚═╝╚═╝
   //
-  //  ███████╗███╗   ██╗██╗   ██╗  ███████╗ █████╗ ██╗██╗     ███████╗
-  //  ██╔════╝████╗  ██║██║   ██║  ██╔════╝██╔══██╗██║██║     ██╔════╝
-  //  █████╗  ██╔██╗ ██║██║   ██║  ███████╗███████║██║██║     ███████╗
-  //  ██╔══╝  ██║╚██╗██║╚██╗ ██╔╝  ╚════██║██╔══██║██║██║     ╚════██║
-  //  ███████╗██║ ╚████║ ╚████╔╝██╗███████║██║  ██║██║███████╗███████║
-  //  ╚══════╝╚═╝  ╚═══╝  ╚═══╝ ╚═╝╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝
+  //  ┌─┐┬─┐┌─┐┬  ┬┬┌┬┐┌─┐  ╔═╗╔╗╔╦  ╦  ┌┬┐┌─┐  ┌┬┐┌─┐┌─┐┬ ┬┬┌┐┌┌─┐  ┌─┐┌┐┌
+  //  ├─┘├┬┘│ │└┐┌┘│ ││├┤   ║╣ ║║║╚╗╔╝   │ │ │  │││├─┤│  ├─┤││││├┤   ├┤ │││
+  //  ┴  ┴└─└─┘ └┘ ┴─┴┘└─┘  ╚═╝╝╚╝ ╚╝    ┴ └─┘  ┴ ┴┴ ┴└─┘┴ ┴┴┘└┘└─┘  └  ┘└┘
   //
-  //  ┌─┐┬─┐┌─┐┬  ┬┬┌┬┐┌─┐  ┌─┐┌─┐┌─┐┌─┐┌─┐┌─┐  ┌┬┐┌─┐  ╔═╗╔╗╔╦  ╦  ╔═╗╔═╗╦╦  ╔═╗
-  //  ├─┘├┬┘│ │└┐┌┘│ ││├┤   ├─┤│  │  ├┤ └─┐└─┐   │ │ │  ║╣ ║║║╚╗╔╝  ╚═╗╠═╣║║  ╚═╗
-  //  ┴  ┴└─└─┘ └┘ ┴─┴┘└─┘  ┴ ┴└─┘└─┘└─┘└─┘└─┘   ┴ └─┘  ╚═╝╝╚╝ ╚╝o  ╚═╝╩ ╩╩╩═╝╚═╝
-  // If we're managing a Sails app instance for this script, then pass through `env.sails`.
-  if (!_.isUndefined(sailsApp)) {
-    liveMachine.setEnv({ sails: sailsApp });
-  }
+  // Now provide `env.
+  //
+  // This allows us to provide access to special variables for this
+  // particular machine runtime (i.e. `machine-as-script`), as well
+  // as any other scope specific to the machine's habitat.
+  //
+  // For example, if this machine declares the "sails" habitat, then we
+  // must be managing a Sails app instance for this script.  So we pass
+  // through that Sails app instance as `env.sails`.
+  //
+  // Similarly, since `machine-as-script` parses serial command-line
+  // arguments, it _always_ provides ``env.commandLineArgs`.
+  liveMachine.setEnv(envToSet);
 
 
 
