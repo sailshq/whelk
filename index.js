@@ -30,26 +30,19 @@ var rttc = require('rttc');
 module.exports = function runMachineAsScript(optsOrMachineDef){
 
 
-  //  ██████╗  █████╗ ██████╗ ███████╗███████╗
-  //  ██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝
-  //  ██████╔╝███████║██████╔╝███████╗█████╗
-  //  ██╔═══╝ ██╔══██║██╔══██╗╚════██║██╔══╝
-  //  ██║     ██║  ██║██║  ██║███████║███████╗
-  //  ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝
+  //   ██████╗██╗  ██╗███████╗ ██████╗██╗  ██╗     ██████╗ ██████╗ ████████╗███████╗
+  //  ██╔════╝██║  ██║██╔════╝██╔════╝██║ ██╔╝    ██╔═══██╗██╔══██╗╚══██╔══╝██╔════╝
+  //  ██║     ███████║█████╗  ██║     █████╔╝     ██║   ██║██████╔╝   ██║   ███████╗
+  //  ██║     ██╔══██║██╔══╝  ██║     ██╔═██╗     ██║   ██║██╔═══╝    ██║   ╚════██║
+  //  ╚██████╗██║  ██║███████╗╚██████╗██║  ██╗    ╚██████╔╝██║        ██║   ███████║
+  //   ╚═════╝╚═╝  ╚═╝╚══════╝ ╚═════╝╚═╝  ╚═╝     ╚═════╝ ╚═╝        ╚═╝   ╚══════╝
   //
-  //   ██████╗ ██████╗ ████████╗██╗ ██████╗ ███╗   ██╗███████╗       ██╗
-  //  ██╔═══██╗██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║██╔════╝       ██║
-  //  ██║   ██║██████╔╝   ██║   ██║██║   ██║██╔██╗ ██║███████╗    ████████╗
-  //  ██║   ██║██╔═══╝    ██║   ██║██║   ██║██║╚██╗██║╚════██║    ██╔═██╔═╝
-  //  ╚██████╔╝██║        ██║   ██║╚██████╔╝██║ ╚████║███████║    ██████║
-  //   ╚═════╝ ╚═╝        ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝    ╚═════╝
-  //
-  //  ███████╗███████╗████████╗    ██╗   ██╗██████╗
-  //  ██╔════╝██╔════╝╚══██╔══╝    ██║   ██║██╔══██╗
-  //  ███████╗█████╗     ██║       ██║   ██║██████╔╝
-  //  ╚════██║██╔══╝     ██║       ██║   ██║██╔═══╝
-  //  ███████║███████╗   ██║       ╚██████╔╝██║
-  //  ╚══════╝╚══════╝   ╚═╝        ╚═════╝ ╚═╝
+  //     ██╗       ███████╗███████╗████████╗    ██╗   ██╗██████╗
+  //     ██║       ██╔════╝██╔════╝╚══██╔══╝    ██║   ██║██╔══██╗
+  //  ████████╗    ███████╗█████╗     ██║       ██║   ██║██████╔╝
+  //  ██╔═██╔═╝    ╚════██║██╔══╝     ██║       ██║   ██║██╔═══╝
+  //  ██████║      ███████║███████╗   ██║       ╚██████╔╝██║
+  //  ╚═════╝      ╚══════╝╚══════╝   ╚═╝        ╚═════╝ ╚═╝
   //
   //  ██████╗ ███████╗███████╗ █████╗ ██╗   ██╗██╗  ████████╗███████╗
   //  ██╔══██╗██╔════╝██╔════╝██╔══██╗██║   ██║██║  ╚══██╔══╝██╔════╝
@@ -80,11 +73,58 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
     throw new Error('Consistency violation: Machine definition must be provided as a dictionary.');
   }
 
+  // Validate optional things.
+  _.each(opts, function (optVal, optKey) {
+    // Ignore opts with undefined values.
+    if (_.isUndefined(optVal)) { return; }
+
+    switch (optKey) {
+
+
+      case 'args': (function (){
+        if (!_.isArray(opts.args)) {
+          throw new Error('Invalid option: If specified, `args` should be provided as an array of strings.');
+        }
+        _.each(opts.args, function (targetInputCodeName){
+          var knownInputCodeNames = _.keys(machineDef.inputs||{});
+          if (!_.contains(knownInputCodeNames, targetInputCodeName)) {
+            throw new Error('Invalid option: `args` references an unrecognized input (`'+targetInputCodeName+'`).  Each item in `args` should be the code name of a known input defined in this machine!');
+          }
+        });
+      })(); break;
+
+
+      case 'envVarNamespace': (function (){
+        if (!_.isString(opts.envVarNamespace)) {
+          throw new Error('Invalid option: If specified, `envVarNamespace` should be provided as a string.');
+        }
+      })(); break;
+
+
+      case 'sails': (function (){
+        if (!_.isObject(opts.sails) || opts.sails.constructor.name !== 'Sails') {
+          throw new Error('Invalid option: The supposed Sails app instance provided as `sails` seems a little sketchy.  Make sure you are doing `sails: require(\'sails\')`.');
+        }
+        // Note that we do additional validations below.
+        // (bcause at this point in the code, we can't yet guarantee the machine's `habitat` will be correct--
+        //  at least not across all versions of the `machine` runner)
+      })(); break;
+
+
+      default:
+        throw new Error('Consistency violation: Internal bug in machine-as-script.  An option (`'+optKey+'`) is unrecognized, but we should never have unrecognized opts at this point.');
+    }
+
+  });
+
+
   // Set up namespace for environment variables.
   var envVarNamespace = '___';
   if (_.isString(opts.envVarNamespace)) {
     envVarNamespace = opts.envVarNamespace;
   }
+
+
 
 
   //  ██████╗ ██╗   ██╗██╗██╗     ██████╗
@@ -176,13 +216,11 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   if (wetMachine.habitat === 'request') {
     throw new Error('The target machine defintion declares a dependency on the `request` habitat, which cannot be provided via the command-line interface.  This machine cannot be run using machine-as-script.');
   }
+  // If the machine depends on the Sails habitat:
   else if (wetMachine.habitat === 'sails') {
 
-    // If the machine depends on the Sails habitat, then we'll attempt to use the provided version of `sails`.
+    // ...then we'll attempt to use the provided version of `sails`.
     if (opts.sails) {
-      if (!_.isObject(opts.sails) || opts.sails.constructor.name !== 'Sails') {
-        throw new Error('The supposed Sails app instance provided as `sails` seems a little sketchy.  Make sure you are doing `sails: require(\'sails\')`.');
-      }
       // Down below, we'll attempt to load (but not lift) the Sails app in the current working directory.
       // If it works, then we'll run the script, providing it with `env.sails`.  After that, regardless of
       // how the script exits, we'll call `sails.lower()` to clean up.
@@ -192,7 +230,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
     else {
       throw new Error('The target machine defintion declares a dependency on the `sails` habitat, but no `sails` app instance was provided as a top-level option to machine-as-script.  Make sure this script module is doing: `sails: require(\'sails\')`');
     }
-  }
+  }//</if (machine depends on `sails` habitat)>
 
 
 
@@ -317,7 +355,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
     inputConfiguration.args = yargs.argv._;
   }
 
-  // Supply argv CLI arguments using special `args` notation
+  // Supply argv CLI arguments if `opts.args` was provided.
   if (_.isArray(opts.args)) {
     _.each(opts.args, function (inputName, i){
       inputConfiguration[inputName] = yargs.argv._[i];
