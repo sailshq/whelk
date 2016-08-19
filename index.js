@@ -431,11 +431,11 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   // Set input values from CLI args/opts
   var liveMachine = wetMachine(inputConfiguration);
 
-  // TODO: remove this log
-  console.log('----------------------------------------------------------------------');
-  console.log('serial CLI args: ',envToSet.commandLineArgs);
-  console.log('input configuration that was parsed: ',inputConfiguration);
-  console.log('----------------------------------------------------------------------');
+
+  // console.log('----------------------------------------------------------------------');
+  // console.log('serial CLI args: ',envToSet.commandLineArgs);
+  // console.log('input configuration that was parsed: ',inputConfiguration);
+  // console.log('----------------------------------------------------------------------');
 
 
   //  ██████╗ ██╗   ██╗██╗██╗     ██████╗
