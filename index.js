@@ -488,7 +488,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
 
     // Now use `rttc.parseHuman()` to interpret the incoming data.
     try {
-      memo[inputCodeName] = rttc.parseHuman(val, rttc.infer(inputDef.example), true);
+      memo[inputCodeName] = rttc.parseHuman(val, rttc.infer(inputDef.example));
     } catch (e) {
       throw new Error('Consistency violation: Could not parse the value specified for `'+inputCodeName+'`.  Details: '+e.stack);
     }
