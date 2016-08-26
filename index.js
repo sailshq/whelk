@@ -606,82 +606,128 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   // Now intercept `.exec()` to take care of sails.lower(), if relevant.
   // (we have to do this because any of the callbacks above _could_ be overridden!)
   var _originalExecBeforeItWasChangedForUseByMachineAsScript = liveMachine.exec;
-  liveMachine.exec = function () {
-    var args = Array.prototype.slice.call(arguments);
+  liveMachine.exec = function (argumentPassedToExec) {
 
-    // If we're not managing a Sails app instance for this script, then just do the normal thing.
-    if (_.isUndefined(habitatVarsToSet.sails)) {
-      if (_.isObject(args[0])) {
-        var combinedCbs = _.extend({}, callbacks, args[0]);
-        _originalExecBeforeItWasChangedForUseByMachineAsScript.apply(liveMachine, [combinedCbs]);
-      }
-      else if (_.isFunction(args[0])) {
-        _originalExecBeforeItWasChangedForUseByMachineAsScript.apply(liveMachine, [args[0]]);
-      }
-      else {
-        _originalExecBeforeItWasChangedForUseByMachineAsScript.apply(liveMachine, [callbacks]);
-      }
-      return;
-    }
+    // Do some setup (maybe)
+    (function _doSetupMaybe (done){
 
-    // --•
-    // Otherwise, we need to load Sails first, then lower it afterwards.
+      // If we're not managing a Sails app instance for this script, then just proceed.
+      if (_.isUndefined(habitatVarsToSet.sails)) {
+        return done();
+      }
 
-    //  ┬  ┌─┐┌─┐┌┬┐  ┌─┐┌─┐┬┬  ┌─┐
-    //  │  │ │├─┤ ││  └─┐├─┤││  └─┐
-    //  ┴─┘└─┘┴ ┴─┴┘  └─┘┴ ┴┴┴─┘└─┘
-    // Load the Sails app.
-    habitatVarsToSet.sails.load(function (err){
-      if (err) {
-        throw new Error('This script relies on access to Sails, but when attempting to load this Sails app automatically, an error occurred.  Details: '+err.stack);
+      // --•
+      // Otherwise, we need to load Sails first.
+      //  ┬  ┌─┐┌─┐┌┬┐  ┌─┐┌─┐┬┬  ┌─┐
+      //  │  │ │├─┤ ││  └─┐├─┤││  └─┐
+      //  ┴─┘└─┘┴ ┴─┴┘  └─┘┴ ┴┴┴─┘└─┘
+      // Load the Sails app.
+      habitatVarsToSet.sails.load(function (err){
+        if (err) {
+          return done(new Error('This script relies on access to Sails, but when attempting to load this Sails app automatically, an error occurred.  Details: '+err.stack));
+        }
+
+        // --•
+        return done();
+      });//</after sails.load()>
+    })(function afterMaybeDoingSetup(setupErr) {
+      // If a setup error occurred, crash the process!
+      // (better to terminate the process than run the script with faulty expectations)
+      if (setupErr) {
+        throw setupErr;
       }
 
       //  ┬─┐┬ ┬┌┐┌  ┬ ┬┌┐┌┌┬┐┌─┐┬─┐┬ ┬ ┬┬┌┐┌┌─┐   ╔═╗═╗ ╦╔═╗╔═╗
       //  ├┬┘│ ││││  │ ││││ ││├┤ ├┬┘│ └┬┘│││││ ┬   ║╣ ╔╩╦╝║╣ ║
       //  ┴└─└─┘┘└┘  └─┘┘└┘─┴┘└─┘┴└─┴─┘┴ ┴┘└┘└─┘  o╚═╝╩ ╚═╚═╝╚═╝
-      // Run underlying .exec(), but intercept it to tear down the Sails app.
+      // Run underlying .exec(), but intercept it.
       _originalExecBeforeItWasChangedForUseByMachineAsScript.apply(liveMachine, [function (sbErr, successResult){
 
-        //  ┬  ┌─┐┬ ┬┌─┐┬─┐  ┌─┐┌─┐┬┬  ┌─┐
-        //  │  │ ││││├┤ ├┬┘  └─┐├─┤││  └─┐
-        //  ┴─┘└─┘└┴┘└─┘┴└─  └─┘┴ ┴┴┴─┘└─┘
-        habitatVarsToSet.sails.lower(function (sailsLowerErr) {
-          if (sailsLowerErr) {
-            console.warn('This script relies on access to Sails, but when attempting to lower this Sails app automatically after running the script, an error occurred.  Details:',sailsLowerErr.stack);
-            console.warn('Continuing to run the appropriate exit callback anyway...');
+        // Now we'll do teardown (maybe)
+        (function _doTeardownMaybe (done){
+
+          // If we're not managing a Sails app instance for this script, then just proceed.
+          if (_.isUndefined(habitatVarsToSet.sails)) {
+            return done();
           }
 
-          // Success
+          // --•
+          // Otherwise, we need to try to lower Sails now.
+          //
+          //  ┬  ┌─┐┬ ┬┌─┐┬─┐  ┌─┐┌─┐┬┬  ┌─┐
+          //  │  │ ││││├┤ ├┬┘  └─┐├─┤││  └─┐
+          //  ┴─┘└─┘└┴┘└─┘┴└─  └─┘┴ ┴┴┴─┘└─┘
+          habitatVarsToSet.sails.lower(function (sailsLowerErr) {
+            if (sailsLowerErr) {
+              console.warn('This script relies on access to Sails, but when attempting to lower this Sails app automatically after running the script, an error occurred.  Details:',sailsLowerErr.stack);
+              console.warn('Continuing to run the appropriate exit callback anyway...');
+            }
+
+            return done();
+          });//</after sails.lower()>
+        })(function afterMaybeDoingTeardown(unused) {
+          if (unused) { throw new Error('Consistency violation: There should never be a teardown error!  But got:'+unused.stack); }
+
+          // If the success exit was triggered, then...
           if (!sbErr) {
-            if (_.isObject(args[0])) {
-              if (args[0].success) { args[0].success(successResult); }
+
+            // Determine the appropriate callback to call, and then call it.
+            if (_.isObject(argumentPassedToExec)) {
+              if (argumentPassedToExec.success) { argumentPassedToExec.success(successResult); }
               else { callbacks.success(successResult); }
             }
-            else if (_.isFunction(args[0])) {
-              args[0](undefined, successResult);
+            else if (_.isFunction(argumentPassedToExec)) {
+              argumentPassedToExec(undefined, successResult);
             }
             else { callbacks.success(successResult); }
+
           }
-          // Some other exit (or catchall error)
+          // Otherwise, some other exit (e.g. `foo` or `error`) was triggered, so...
           else {
-            if (_.isObject(args[0]) && _.contains(_.keys(args[0]), sbErr.exit)) {
-              args[0][sbErr.exit](sbErr.output);
+
+            // If the catchall `error` exit was triggered, then set the exit code of the process to 1.
+            // This won't take effect until the process actually exits-- and it can be overridden in
+            // the mean time.
+            //
+            // > To override this behavior, provide an `error` callback when calling `.exec()`, and
+            // > have it set e.g. `process.exitCode = 0`.
+            if (sbErr.exit === 'error' || !sbErr.exit) {
+              process.exitCode = 1;
             }
-            else if (_.isFunction(args[0])) {
-              args[0](sbErr);
+            // >-
+
+            // Determine the appropriate callback to call, and then call it.
+            if (_.isObject(argumentPassedToExec) && _.contains(_.keys(argumentPassedToExec), sbErr.exit)) {
+              argumentPassedToExec[sbErr.exit](sbErr.output);
+            }
+            else if (_.isFunction(argumentPassedToExec)) {
+              argumentPassedToExec(sbErr);
             }
             else if (_.contains(_.keys(callbacks), sbErr.exit)) {
               callbacks[sbErr.exit](sbErr.output);
             }
             else { callbacks.error(sbErr); }
-          }
 
-        });//</after sails.lower()>
-      }]);//</after calling underlying .exec()>
+          }//</else :: an exit other than `success` was triggered>
 
-    });//</after sails.load()>
+          // >-
+          // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+          // At this point, the exit callback has run.
+          // It probably won't have asynchronous stuff in it, so it may be
+          // completely done.  Or it might have other stuff to do still.
+          //
+          // But the important thing is that, when it is finished, the process will
+          // exit naturally (unless there are any unintentional hanging callbacks in
+          // the machine-- or e.g. if the machine started a TCP server).
+          //
+          // For more background, see:
+          // https://nodejs.org/api/process.html#process_process_exit_code
+          // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+        });//</running self-calling function :: _doTeardownMaybe()>
+      }]);//</calling underlying .exec() -- i.e. running the machine `fn`>
+    });//</running self-calling function :: _doSetupMaybe()>
   };//</definition of our .exec() override>
-
 
 
 
