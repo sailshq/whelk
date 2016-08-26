@@ -57,7 +57,7 @@ Aside from the [normal properties that go into a Node Machine definition](http:/
 | Option            | Type            | Description                                            |
 |:------------------|-----------------|:-------------------------------------------------------|
 | `machine`         | ((dictionary?)) | If specified, `machine-as-script` will use this as the machine definition.  Otherwise by default, it expects the machine definition to be passed in at the top-level. In that case, the non-standard (machine-as-script-specific) options are omitted when the machine is built).
-| `args`            | ((array?))      | The names of inputs, in order, to use for handling serial command-line arguments (more on that [below](#using-serial-cli-arguments)).
+| `args`            | ((array?))      | The names of inputs, in order, to use for handling serial command-line arguments (more on that [below](#using-serial-command-line-arguments)).
 | `envVarNamespace` | ((string?))     | The namespace to use when mapping environment variables to runtime arguments for particular inputs (more on that [below](#using-environment-variables)).
 | `sails`           | ((SailsApp?))   | Only relevant if the machine def declares `habitat: 'sails'`.  This is the Sails app instance that will be provided to this machine as a habitat variable (`env.sails`).  In most cases, if you are using this, you'll want to set it to `require('sails').  The Sails app instance will be automatically loaded before running the machine, and automatically lowered as soon as the machine exits.
 
