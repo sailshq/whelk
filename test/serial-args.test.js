@@ -155,8 +155,10 @@ describe('running a script', function (){
         timeout: 1500
       }).exec(function (err,outs){
         if (err){
-          // TODO: check err code (err.output.code is probably 1-- probably need to refine that a bit further in mp-process)
-          console.warn('Got an error.  Was expecting it prbly, but just in case:',err);
+          try {
+            assert.equal(err.code, 1);
+          } catch (e) { return done(e); }
+          // console.warn('Got an error.  Was expecting it prbly, but just in case:',err);
           return done();
         }
 
@@ -179,8 +181,10 @@ describe('running a script', function (){
         timeout: 1500
       }).exec(function (err,outs){
         if (err){
-          // TODO: check err code (err.output.code is probably 1-- probably need to refine that a bit further in mp-process)
-          console.warn('Got an error.  Was expecting it prbly, but just in case:',err);
+          try {
+            assert.equal(err.code, 1);
+          } catch (e) { return done(e); }
+          // console.warn('Got an error.  Was expecting it prbly, but just in case:',err);
           return done();
         }
 
@@ -233,8 +237,10 @@ describe('running a script', function (){
         timeout: 1500
       }).exec(function (err,outs){
         if (err){
-          // TODO: check err code (err.output.code is probably 1-- probably need to refine that a bit further in mp-process)
-          console.warn('Got an error.  Was expecting it prbly, but just in case:',err);
+          try {
+            assert.equal(err.code, 1);
+          } catch (e) { return done(e); }
+          // console.warn('Got an error.  Was expecting it prbly, but just in case:',err);
           return done();
         }
 
@@ -258,11 +264,12 @@ describe('running a script', function (){
           timeout: 1500
         }).exec(function (err,outs){
           if (err){
-            // TODO: check err code (err.output.code is probably 1-- probably need to refine that a bit further in mp-process)
-            console.warn('Got an error.  Was expecting it prbly, but just in case:\n----------------------------',err,'\n----------------------------');
-            console.warn('Object.keys(err)',Object.keys(err));
-            console.warn('err.code ===',err.code);
-            console.warn('err.output ===',err.output);
+            try {
+              assert.equal(err.code, 1);
+            } catch (e) {
+              return done(e);
+            }
+            // console.warn('Got an error.  Was expecting it prbly, but just in case:\n**\n',err,'\n**');
             return done();
           }
 
