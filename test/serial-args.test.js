@@ -159,6 +159,7 @@ describe('running a script', function (){
           console.warn('Got an error.  Was expecting it prbly, but just in case:',err);
           return done();
         }
+        console.log("err:",err);
 
         return done(new Error('Should have exited with an error (because unexpected serial args were provided)  But instead, script exited with normal code 0 and returned: '+util.inspect(outs, {depth:null})));
       });

@@ -541,6 +541,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
       if (exitCodeName === 'error') {
         console.error(chalk.red('Unexpected error occurred:\n'), output);
         console.error(output.stack ? chalk.gray(output.stack) : output);
+        console.log('process.exitCode is:',process.exitCode);
         return;
       }
       else if (exitCodeName === 'success') {
@@ -690,21 +691,28 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
             // the mean time.
             //
             // > To override this behavior, provide an `error` callback when calling `.exec()`, and
-            // > have it set e.g. `process.exitCode = 0`.
+            // > have it set e.g. `process.exitCode = 0`.  Or you can just have it call `process.exit(0)`.
             if (sbErr.exit === 'error' || !sbErr.exit) {
               process.exitCode = 1;
+              console.log('set exit code to 1');
             }
             // >-
 
+            // `outputToUse` will be passed to the callback if a non-catchall callback is in use.
+            var outputToUse = _.isUndefined(sbErr.output) ? sbErr : sbErr.output;
+
             // Determine the appropriate callback to call, and then call it.
             if (_.isObject(argumentPassedToExec) && _.contains(_.keys(argumentPassedToExec), sbErr.exit)) {
-              argumentPassedToExec[sbErr.exit](sbErr.output);
+              argumentPassedToExec[sbErr.exit](outputToUse);
             }
             else if (_.isFunction(argumentPassedToExec)) {
               argumentPassedToExec(sbErr);
             }
             else if (_.contains(_.keys(callbacks), sbErr.exit)) {
-              callbacks[sbErr.exit](sbErr.output);
+              callbacks[sbErr.exit](outputToUse);
+            }
+            else if (_.isObject(argumentPassedToExec) && _.contains(_.keys(argumentPassedToExec), 'error')) {
+              argumentPassedToExec.error(sbErr);
             }
             else { callbacks.error(sbErr); }
 
