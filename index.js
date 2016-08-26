@@ -388,6 +388,9 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   envToSet.commandLineArgs = _.isArray(yargs.argv._) ? yargs.argv._ : [];
   // (^^ Note that we always supply `env.commandLineArgs`.)
 
+  // TODO: if `args` points at inputs that are not strings, numbers, or booleans, freak out
+  // (maybe not here, but somewhere)
+
   // But if `opts.args` was provided, then we ALSO iterate through the serial CLI args
   // and provide them as values for the appropriate inputs (i.e. according to the order
   // of code names in `opts.args`.)
