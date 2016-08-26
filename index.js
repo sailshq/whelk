@@ -398,26 +398,14 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   // TODO: if `args` points at inputs that are not strings, numbers, or booleans, freak out
   // (maybe not here, but somewhere)
 
-  // But if `opts.args` was provided, then we ALSO iterate through the serial command-line args
-  // and provide them as values for the appropriate inputs (i.e. according to the order
+  // But if `opts.args` was provided, then we ALSO iterate through the serial command-line
+  // args and provide them as values for the appropriate inputs (i.e. according to the order
   // of code names in `opts.args`.)
   if (_.isArray(opts.args)) {
     _.each(opts.args, function (inputName, i){
       argins[inputName] = envToSet.serialCommandLineArgs[i];
     });
   }
-
-
-  // TODO: deprecate
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  // Include a special `args` input for convenience--
-  // but note that this is an experimental feature that could change.
-  //
-  // UPDATE: THIS WILL BE DEPRECATED SOON.  USE `env.serialCommandLineArgs` INSTEAD!!!
-  if (_.isArray(envToSet.serialCommandLineArgs)) {
-    argins.args = envToSet.serialCommandLineArgs;// << will be deprecated
-  }
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
   // Finally, loop through each of the input configurations and run `rttc.parseHuman()`.
