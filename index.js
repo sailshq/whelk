@@ -538,16 +538,24 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
       if (alreadyExited) { return; }
       alreadyExited = true;
 
+
+      // Default catchall `error` behavior
       if (exitCodeName === 'error') {
         console.error(chalk.red('Unexpected error occurred:\n'), output);
         console.error(output.stack ? chalk.gray(output.stack) : output);
         process.exit(1);
         return;
       }
+      // ‡
+      // ‡
+      // Default `success` behavior
       else if (exitCodeName === 'success') {
+
+
         if (_.isUndefined(output)) {
           try {
             if (
+              !_.isUndefined(liveMachine.exits.success.outputExample) ||
               !_.isUndefined(liveMachine.exits.success.example) ||
               _.isFunction(liveMachine.exits.success.getExample) ||
               !_.isUndefined(liveMachine.exits.success.like) ||
@@ -566,7 +574,9 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
           console.log(chalk.green('OK.'));
         }
       }
-      // Miscellaneous exit.
+      //‡
+      //‡
+      // Default behavior for miscellaneous exits
       else {
         console.log(chalk.cyan('Something went wrong:'));
         console.error(output.stack ? chalk.gray(output.stack) : output);
