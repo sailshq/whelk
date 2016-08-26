@@ -698,8 +698,8 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   //
   // Now provide `env.
   //
-  // This allows us to provide access to special variables for this
-  // particular machine runtime (i.e. `machine-as-script`), as well
+  // This allows us to provide access to special "habitat variables" for
+  // this particular machine runtime (i.e. `machine-as-script`), as well
   // as any other scope specific to the machine's habitat.
   //
   // For example, if this machine declares the "sails" habitat, then we
@@ -708,6 +708,8 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   //
   // Similarly, since `machine-as-script` parses serial command-line
   // arguments, it _always_ provides ``env.serialCommandLineArgs`.
+  // > Note: If there are no serial command-line arguments, then
+  // > `env.serialCommandLineArgs` is an empty array).
   liveMachine.setEnv(habitatVarsToSet);
 
 
