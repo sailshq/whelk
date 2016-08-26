@@ -2,6 +2,7 @@
  * Module dependencies
  */
 
+var util = require('util');
 var assert = require('assert');
 var Process = require('machinepack-process');
 
@@ -159,7 +160,7 @@ describe('running a script', function (){
           return done();
         }
 
-        return done(new Error('Should have exited with an error (because unexpected serial args were provided)'));
+        return done(new Error('Should have exited with an error (because unexpected serial args were provided)  But instead, script exited with normal code 0 and returned: '+util.inspect(outs, {depth:null})));
       });
     });//</it>
 
@@ -183,7 +184,7 @@ describe('running a script', function (){
           return done();
         }
 
-        return done(new Error('Should have exited with an error (because unexpected serial args were provided)'));
+        return done(new Error('Should have exited with an error (because unexpected serial args were provided)  But instead, script exited with normal code 0 and returned: '+util.inspect(outs, {depth:null})));
       });
 
     });//</it>
@@ -237,7 +238,7 @@ describe('running a script', function (){
           return done();
         }
 
-        return done(new Error('Should have exited with a runtime validation error (because an INVALID argin was provided)'));
+        return done(new Error('Should have exited with a runtime validation error (because an INVALID argin was provided).  But instead, script exited with normal code 0 and returned: '+util.inspect(outs, {depth:null})));
       });
     });//</it>
 
@@ -262,7 +263,7 @@ describe('running a script', function (){
             return done();
           }
 
-          return done(new Error('Should have exited with a runtime validation error (because a required argin was omitted)'));
+          return done(new Error('Should have exited with a runtime validation error (because a required argin was omitted).  But instead, script exited with normal code 0 and returned: '+util.inspect(outs, {depth:null})));
         });
       });//</it>
 
