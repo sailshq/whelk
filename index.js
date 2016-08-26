@@ -266,7 +266,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   //
   // ======================================================================
   // Now we'll put together the configuration for our wet machine instance.
-  // (using CLI opts, serial CLI args, and/or env vars)
+  // (using CLI opts, serial command-line args, and/or env vars)
   // ======================================================================
 
   // Configure CLI usage helptext and set up commander
@@ -345,7 +345,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   //   │ │ │  │ ┬├┤  │   ├─┤  ║  ║╚╗╔╝║╣   ║║║╠═╣║  ╠═╣║║║║║╣   ││││└─┐ │ ├─┤││││  ├┤
   //   ┴ └─┘  └─┘└─┘ ┴   ┴ ┴  ╩═╝╩ ╚╝ ╚═╝  ╩ ╩╩ ╩╚═╝╩ ╩╩╝╚╝╚═╝  ┴┘└┘└─┘ ┴ ┴ ┴┘└┘└─┘└─┘o
 
-  // Build runtime input values from CLI options and args.
+  // Build runtime input values from serial command-line arguments, system environment variables, and command-line options.
   var inputConfiguration = {};
 
   // Supply CLI options
@@ -362,7 +362,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   // ```
   // Currently, `'my sweet code comment'` is parsed as "verbose",
   // even though "verbose" should really be a boolean, and so that
-  // string should be interpreted as a serial CLI arg (not an opt).
+  // string should be interpreted as a serial command-line arg (not an opt).
   //
   // (see https://github.com/yargs/yargs#booleankey for more info)
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -382,7 +382,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   });
 
 
-  // Supply serial CLI arguments
+  // Supply serial command-line arguments
   // (the kind that come one after another -- i.e. they don't start with `-` or `--`)
   // =======================================================================================
   envToSet.serialCommandLineArgs = _.isArray(yargs.argv._) ? yargs.argv._ : [];
@@ -393,7 +393,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   // TODO: if `args` points at inputs that are not strings, numbers, or booleans, freak out
   // (maybe not here, but somewhere)
 
-  // But if `opts.args` was provided, then we ALSO iterate through the serial CLI args
+  // But if `opts.args` was provided, then we ALSO iterate through the serial command-line args
   // and provide them as values for the appropriate inputs (i.e. according to the order
   // of code names in `opts.args`.)
   if (_.isArray(opts.args)) {
@@ -438,7 +438,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
 
 
   // console.log('----------------------------------------------------------------------');
-  // console.log('serial CLI args: ',envToSet.serialCommandLineArgs);
+  // console.log('serial command-line args: ',envToSet.serialCommandLineArgs);
   // console.log('input configuration that was parsed: ',inputConfiguration);
   // console.log('----------------------------------------------------------------------');
 

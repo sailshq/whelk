@@ -288,9 +288,11 @@ To learn more about rttc types, check out the [rttc README on GitHub](https://gi
 
 ## Misc
 
+
 ##### Escaping your input values
 
 The rules for escaping env vars, command-line opts, and serial command-line arguments can vary across operating systems.  However, a good reference point is the [escape machine in mp-process](http://node-machine.org/machinepack-process/escape).  That's what the `machinepack` command-line tool uses internally for creating code samples after a machine is run using `mp exec`.
+
 
 ##### Precedence
 
@@ -305,9 +307,14 @@ Starting from the highest precedence, here is a list of how this module prioriti
 
 In other words, if you specify the same input as a serial command-line argument AND as a system environment variable or command-line opt, the serial argument will always "win".  And if you specify the same input as a system environment variable and command-line opt, the system environment variable will always win.
 
-##### Other Implementation Details, Edge Cases, and Conventions
 
-`machine-as-action` works by building a modified version of a machine instance that, when you call `.exec()`, will proxy its input values from serial command-line arguments, command-line opts (`--`), and/or environment variables.  You should almost always call `.exec()` immediately after using `machine-as-action`, in the same file.  If you are building a command-line tool, it is conventional to keep these files in your project's `bin/` directory (see the `treeline` and `machinepack` CLI tools on NPM for examples).
+##### How it works
+
+`machine-as-action` works by building a modified version of a machine instance that, when you call `.exec()`, will proxy its input values from serial command-line arguments (`myscript bar`), command-line opts (`myscript --foo='bar'`), and/or system environment variables (`___foo='bar' myscript`).
+
+##### Conventions
+
+You should almost always call `.exec()` immediately after using `machine-as-action`, in the same file.  If you are building a command-line tool, it is conventional to keep these files in your project's `bin/` directory (see the `treeline` and `machinepack` CLI tools on NPM for examples).
 
 If, when you call `.exec()`, you omit a callback for a non-standard exit, the standard behavior of the machine runner applies.  If you omit `error` or `success`, machine-as-script will attempt its best guess at appropriate output by using exit metadata + introspecting runtime output.  Similarly, runtime input values are validated vs. the exemplars and requiredness in the machine's input definitions.
 
