@@ -385,8 +385,10 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   // Supply serial CLI arguments
   // (the kind that come one after another -- i.e. they don't start with `-` or `--`)
   // =======================================================================================
-  envToSet.commandLineArgs = _.isArray(yargs.argv._) ? yargs.argv._ : [];
-  // (^^ Note that we always supply `env.commandLineArgs`.)
+  envToSet.serialCommandLineArgs = _.isArray(yargs.argv._) ? yargs.argv._ : [];
+  // (^^ Note that we always supply `env.serialCommandLineArgs`, and that they're unaffected
+  //  by the `args` directive.)
+
 
   // TODO: if `args` points at inputs that are not strings, numbers, or booleans, freak out
   // (maybe not here, but somewhere)
@@ -396,7 +398,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   // of code names in `opts.args`.)
   if (_.isArray(opts.args)) {
     _.each(opts.args, function (inputName, i){
-      inputConfiguration[inputName] = envToSet.commandLineArgs[i];
+      inputConfiguration[inputName] = envToSet.serialCommandLineArgs[i];
     });
   }
 
@@ -406,9 +408,9 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   // Include a special `args` input for convenience--
   // but note that this is an experimental feature that could change.
   //
-  // UPDATE: THIS WILL BE DEPRECATED SOON.  USE `env.commandLineArgs` INSTEAD!!!
-  if (_.isArray(envToSet.commandLineArgs)) {
-    inputConfiguration.args = envToSet.commandLineArgs;// << will be deprecated
+  // UPDATE: THIS WILL BE DEPRECATED SOON.  USE `env.serialCommandLineArgs` INSTEAD!!!
+  if (_.isArray(envToSet.serialCommandLineArgs)) {
+    inputConfiguration.args = envToSet.serialCommandLineArgs;// << will be deprecated
   }
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -436,7 +438,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
 
 
   // console.log('----------------------------------------------------------------------');
-  // console.log('serial CLI args: ',envToSet.commandLineArgs);
+  // console.log('serial CLI args: ',envToSet.serialCommandLineArgs);
   // console.log('input configuration that was parsed: ',inputConfiguration);
   // console.log('----------------------------------------------------------------------');
 
@@ -638,7 +640,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   // through that Sails app instance as `env.sails`.
   //
   // Similarly, since `machine-as-script` parses serial command-line
-  // arguments, it _always_ provides ``env.commandLineArgs`.
+  // arguments, it _always_ provides ``env.serialCommandLineArgs`.
   liveMachine.setEnv(envToSet);
 
 

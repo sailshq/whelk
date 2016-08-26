@@ -58,14 +58,14 @@ Aside from the [normal properties that go into a Node Machine definition](http:/
 |:------------------|-----------------|:-------------------------------------------------------|
 | `machine`         | ((dictionary?)) | If specified, `machine-as-script` will use this as the machine definition.  Otherwise by default, it expects the machine definition to be passed in at the top-level. In that case, the non-standard (machine-as-script-specific) options are omitted when the machine is built).
 | `args`            | ((array?))      | The names of inputs, in order, to use for handling serial command-line arguments (more on that [below](#using-serial-command-line-arguments)).
-| `envVarNamespace` | ((string?))     | The namespace to use when mapping environment variables to runtime arguments for particular inputs (more on that [below](#using-environment-variables)).
+| `envVarNamespace` | ((string?))     | The namespace to use when mapping environment variables to runtime arguments for particular inputs (more on that [below](#using-system-environment-variables)).
 | `sails`           | ((SailsApp?))   | Only relevant if the machine def declares `habitat: 'sails'`.  This is the Sails app instance that will be provided to this machine as a habitat variable (`env.sails`).  In most cases, if you are using this, you'll want to set it to `require('sails').  The Sails app instance will be automatically loaded before running the machine, and automatically lowered as soon as the machine exits.
 
 
 
 ## Using serial command-line arguments
 
-In addition to specifying inputs as `--` command-line opts, you can configure your script to accept serial command-line arguments.
+In addition to specifying inputs as `--` command-line opts, you can configure your script to accept _serial command-line arguments_.
 
 Just specify `args` as an array of input names, in the expected order:
 
@@ -87,15 +87,77 @@ $ node ./add-numbers.js 4 5
 # Got result: 9
 ```
 
-##### Experimental: The `serialCommandLineArgs` input
 
-If you don't already have an input named `args`, when using machine-as-action, your machine's `fn` will receive an array of serial command-line arguments in `inputs.args`.  **THIS IS AN EXPERIMENTAL FEATURE AND COULD CHANGE AT ANY TIME WITHOUT BACKWARDS COMPATIBILITY!!**
+#### Serial command-line arguments with dynamic arity
 
-> Note: In a future release, this will likely change to rely on either something like `env.args` or to use a new option to assign an input for this purpose (similar to machine-as-action's `urlWildcardSuffix`)
+Sometimes, it's useful to be able to get _all_ serial command-line arguments, without having to declare your script's expectations beforehand.
+
+For example, in the example above, we might want to support adding an infinite number of numbers delimited by spaces on the command line:
+
+```sh
+$ node ./add-numbers.js 4 5 10 -2382 31.482 13 48 139 13 1
+```
+
+To help you accomplish this, `machine-as-script` injects all serial command-line arguments via a special
+habitat variable (`env.serialCommandLineArgs`).  Your machine can then loop over this array of strings
+and behave accordingly:
+
+```js
+asScript({
+  
+  description: 'Sum all of the provided numbers.',
+
+  exits: {
+    
+    success: {
+      outputDescription: 'The sum of all the numbers that were specified via serial command-line args.',
+      outputExample: 9
+    },
+
+    invalidNumber: {
+      description: 'One of the provided command-line args could not be parsed as a number.'
+    }
+
+  },
+
+  fn: function (inputs, exits, env){
+
+    var aimErrorAt = require('aim-error-at');
+
+    var sum = env.serialCommandLineArgs.reduce(function (memo, numberHopefully){
+      var num = +numberHopefully;
+      if (Number.isNaN(num)) {
+        throw aimErrorAt('invalidNumber', new Error('Could not parse `'+numberHopefully+'` as a number.'));
+      }
+      memo += num;
+      return memo;
+    });
+
+    return exits.success(sum);
+
+  }
+
+}).exec({
+  success: function (sum){
+    console.log('Got result:', sum);
+  }
+});
+```
+
+Note that `env.serialCommandLineArgs` is not affected by the `args` directive.  In other words, it is _always_ an
+array of strings, even if the `args` directive was provided and pointed at inputs w/ different types of examples
+(e.g. numbers, dictionaries, etc.).
+
+
+> ###### Compatibility
+>
+> + This habitat variable is the evolution of the `args` input from <=v3.
+> + Prior to v5, this was provided as `env.commandLineArgs` for a short period of time.
 
 
 
-## Using environment variables
+
+## Using system environment variables
 
 Sometimes (particularly in a production setting, like on Heroku) you want to be able to
 use your machine as a script without specifying serial command-line arguments or checking in
