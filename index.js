@@ -483,7 +483,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
     // Skip special `args` input (unless there's actually an input named `args`.)
     var inputDef = wetMachine.inputs[inputCodeName];
     if (!inputDef) {
-      throw new Error('Unexpected error: received configuration for unknown input ('+inputCodeName+')');
+      throw new Error('Unrecognized input ('+inputCodeName+')');
     }
 
     // Now use `rttc.parseHuman()` to interpret the incoming data.
@@ -541,7 +541,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
       if (exitCodeName === 'error') {
         console.error(chalk.red('Unexpected error occurred:\n'), output);
         console.error(output.stack ? chalk.gray(output.stack) : output);
-        console.log('process.exitCode is:',process.exitCode);
+        process.exit(1);
         return;
       }
       else if (exitCodeName === 'success') {
@@ -557,7 +557,9 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
               console.log(util.inspect(output, {depth: null, colors: true}));
             }
           }
-          catch (e) { /* fail silently if anything goes awry */ }
+          catch (e) {
+            console.error('Consistency violation: Could not log provided output.  Details:',e);
+          }
         }
         // Otherwise, output is expected.  So log it.
         else {
@@ -686,17 +688,24 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
           // Otherwise, some other exit (e.g. `foo` or `error`) was triggered, so...
           else {
 
-            // If the catchall `error` exit was triggered, then set the exit code of the process to 1.
-            // This won't take effect until the process actually exits-- and it can be overridden in
-            // the mean time.
+            // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            // If the catchall `error` exit was triggered, then we want the process to exit with an
+            // exit code of 1.  But unfortunately, in some versions of Node (definitely in v4.3.0 anyway)
+            // it seems that setting `process.exitCode = 1` doesn't actually work.  Now, IF IT DID work,
+            // it would allow us to set the exit code here, but not actually have it take effect until the
+            // process actually exits-- kind of like `res.status()` in Sails/Express.  The nice thing about
+            // that would be that we could set it here, but still allow userland to override this behavior
+            // by providing an `error` callback when calling `.exec()` (i.e. having it set `process.exitCode = 0`
+            // or  call `process.exit(0)`).
             //
-            // > To override this behavior, provide an `error` callback when calling `.exec()`, and
-            // > have it set e.g. `process.exitCode = 0`.  Or you can just have it call `process.exit(0)`.
-            if (sbErr.exit === 'error' || !sbErr.exit) {
-              process.exitCode = 1;
-              console.log('set exit code to 1');
-            }
-            // >-
+            // But obviously we can't do that.  So instead, we get as close as we can:
+            //
+            // Unless userland passes in an `error` callback to `.exec()` (or just passes in a conventional
+            // Node callback function), then nothing special will happen as far as exit code.
+            //
+            // On the other hand, _if there is no custom catchall `error` handling logic provided_, then the
+            // default error callback within `machine-as-script` will call `process.exit(1)`.
+            // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
             // `outputToUse` will be passed to the callback if a non-catchall callback is in use.
             var outputToUse = _.isUndefined(sbErr.output) ? sbErr : sbErr.output;
