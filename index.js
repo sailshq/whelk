@@ -539,49 +539,66 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
       alreadyExited = true;
 
 
+      //  ┌┬┐┌─┐┌─┐┌─┐┬ ┬┬ ┌┬┐  ╔═╗╦═╗╦═╗╔═╗╦═╗  ┬ ┬┌─┐┌┐┌┌┬┐┬  ┌─┐┬─┐
+      //   ││├┤ ├┤ ├─┤│ ││  │   ║╣ ╠╦╝╠╦╝║ ║╠╦╝  ├─┤├─┤│││ │││  ├┤ ├┬┘
+      //  ─┴┘└─┘└  ┴ ┴└─┘┴─┘┴   ╚═╝╩╚═╩╚═╚═╝╩╚═  ┴ ┴┴ ┴┘└┘─┴┘┴─┘└─┘┴└─
       // Default catchall `error` behavior
+      // (machine either called `exits.error()` on purpose, or it ran into an unhandled internal error,
+      //  or the argins failed to validate, or it timed out, etc.)
       if (exitCodeName === 'error') {
         console.error(chalk.red('Unexpected error occurred:\n'), output);
         console.error(output.stack ? chalk.gray(output.stack) : output);
-        process.exit(1);
-        return;
-      }
+        return process.exit(1);
+      }//</if :: the machine called `exits.error()` for whatever reason>
       // ‡
-      // ‡
+      //  ┌┬┐┌─┐┌─┐┌─┐┬ ┬┬ ┌┬┐  ╔═╗╦ ╦╔═╗╔═╗╔═╗╔═╗╔═╗  ┬ ┬┌─┐┌┐┌┌┬┐┬  ┌─┐┬─┐
+      //   ││├┤ ├┤ ├─┤│ ││  │   ╚═╗║ ║║  ║  ║╣ ╚═╗╚═╗  ├─┤├─┤│││ │││  ├┤ ├┬┘
+      //  ─┴┘└─┘└  ┴ ┴└─┘┴─┘┴   ╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝╚═╝  ┴ ┴┴ ┴┘└┘─┴┘┴─┘└─┘┴└─
       // Default `success` behavior
       else if (exitCodeName === 'success') {
 
-
+        // If no output was received, then simply log "OK" and call it a day.
         if (_.isUndefined(output)) {
-          try {
-            if (
-              !_.isUndefined(liveMachine.exits.success.outputExample) ||
-              !_.isUndefined(liveMachine.exits.success.example) ||
-              _.isFunction(liveMachine.exits.success.getExample) ||
-              !_.isUndefined(liveMachine.exits.success.like) ||
-              !_.isUndefined(liveMachine.exits.success.itemOf)
-            ) {
-              // TODO: support json-encoded output vs colors
-              console.log(util.inspect(output, {depth: null, colors: true}));
-            }
-          }
-          catch (e) {
-            console.error('Consistency violation: Could not log provided output.  Details:',e);
-          }
-        }
-        // Otherwise, output is expected.  So log it.
-        else {
           console.log(chalk.green('OK.'));
         }
-      }
-      //‡
-      //‡
+        // Otherwise, output was received.
+        else {
+
+          // Figure out if our exit was expecting any output.
+          var wasOutputExpected =
+            !_.isUndefined(liveMachine.exits.success.outputExample) ||
+            !_.isUndefined(liveMachine.exits.success.example) ||
+            _.isFunction(liveMachine.exits.success.getExample) ||
+            !_.isUndefined(liveMachine.exits.success.like) ||
+            !_.isUndefined(liveMachine.exits.success.itemOf);
+
+          // If so, then log the output.
+          if (wasOutputExpected) {
+            try {
+              // TODO: support json-encoded output vs colors
+              console.log(util.inspect(output, {depth: null, colors: true}));
+            } catch (e) {
+              throw new Error('Consistency violation: Could not log provided output.  Details: '+util.inspect(e, {depth: null}));
+            }
+          }
+          // Otherwise, output was not expected.
+          // (So don't log anything.)
+          else { }
+
+        }//</else :: output was received>
+      }//</if :: the machine called `exits.success()`>
+      // ‡
+      //  ┌┬┐┌─┐┌─┐┌─┐┬ ┬┬ ┌┬┐  ╔╦╗╦╔═╗╔═╗╔═╗╦  ╦  ╔═╗╔╗╔╔═╗╔═╗╦ ╦╔═╗  ┌─┐─┐ ┬┬┌┬┐  ┬ ┬┌─┐┌┐┌┌┬┐┬  ┌─┐┬─┐
+      //   ││├┤ ├┤ ├─┤│ ││  │   ║║║║╚═╗║  ║╣ ║  ║  ╠═╣║║║║╣ ║ ║║ ║╚═╗  ├┤ ┌┴┬┘│ │   ├─┤├─┤│││ │││  ├┤ ├┬┘
+      //  ─┴┘└─┘└  ┴ ┴└─┘┴─┘┴   ╩ ╩╩╚═╝╚═╝╚═╝╩═╝╩═╝╩ ╩╝╚╝╚═╝╚═╝╚═╝╚═╝  └─┘┴ └─┴ ┴   ┴ ┴┴ ┴┘└┘─┴┘┴─┘└─┘┴└─
       // Default behavior for miscellaneous exits
       else {
         console.log(chalk.cyan('Something went wrong:'));
         console.error(output.stack ? chalk.gray(output.stack) : output);
-      }
-    };//</callback definition>
+      }//</else :: the machine called some other miscellaneous exit>
+
+    };//</defined default callback for this exit>
+
   });//</each exit>
 
 
