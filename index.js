@@ -546,9 +546,41 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
       // (machine either called `exits.error()` on purpose, or it ran into an unhandled internal error,
       //  or the argins failed to validate, or it timed out, etc.)
       if (exitCodeName === 'error') {
-        console.error(chalk.red('Unexpected error occurred:\n'), output);
-        console.error(output.stack ? chalk.gray(output.stack) : output);
-        return process.exit(1);
+
+        // Since this is the error exit, we know that the output ALWAYS exists, and is ALWAYS an Error instance.
+        var err = output;
+
+        // Check to see if this is a validation error.  If so, show more specialized output.
+        if (err.code === 'E_MACHINE_RUNTIME_VALIDATION') {
+          console.error(chalk.red('Could not run script.'));
+          console.error('Either a required option is missing, or one or more of the provided options are invalid.');
+          console.error('Details:');
+          console.error('----------------------------------------------------------------------');
+          console.log(err);
+          console.error(err.stack ? chalk.gray(err.stack) : err);
+          console.error('----------------------------------------------------------------------');
+          return process.exit(1);
+        }
+        // Check to see if this is a timeout error.  If so, show more specialized output.
+        else if (err.code === 'E_MACHINE_TIMEOUT') {
+          console.error(chalk.red('Script timed out before it finished.'));
+          console.error('Details:');
+          console.error('----------------------------------------------------------------------');
+          console.log(err);
+          console.error(err.stack ? chalk.gray(err.stack) : err);
+          console.error('----------------------------------------------------------------------');
+          return process.exit(1);
+        }
+        // Otherwise, this is some kind of unexpected error:
+        else {
+          console.error(chalk.red('Unexpected error occurred:'));
+          console.error('Details:');
+          console.error('----------------------------------------------------------------------');
+          console.log(err);
+          console.error(err.stack ? chalk.gray(err.stack) : err);
+          console.error('----------------------------------------------------------------------');
+          return process.exit(1);
+        }
       }//</if :: the machine called `exits.error()` for whatever reason>
       // ‡
       //  ┌┬┐┌─┐┌─┐┌─┐┬ ┬┬ ┌┬┐  ╔═╗╦ ╦╔═╗╔═╗╔═╗╔═╗╔═╗  ┬ ┬┌─┐┌┐┌┌┬┐┬  ┌─┐┬─┐
@@ -596,6 +628,10 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
         console.log(chalk.cyan('Something went wrong:'));
         console.error(output.stack ? chalk.gray(output.stack) : output);
       }//</else :: the machine called some other miscellaneous exit>
+
+      //--•
+      // If the process has not already been explicitly terminated
+      // by `process.exit(1)` above, then let it exit naturally.
 
     };//</defined default callback for this exit>
 

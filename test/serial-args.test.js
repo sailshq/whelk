@@ -159,7 +159,6 @@ describe('running a script', function (){
           console.warn('Got an error.  Was expecting it prbly, but just in case:',err);
           return done();
         }
-        console.log("err:",err);
 
         return done(new Error('Should have exited with an error (because unexpected serial args were provided)  But instead, script exited with normal code 0 and returned: '+util.inspect(outs, {depth:null})));
       });
@@ -260,7 +259,10 @@ describe('running a script', function (){
         }).exec(function (err,outs){
           if (err){
             // TODO: check err code (err.output.code is probably 1-- probably need to refine that a bit further in mp-process)
-            console.warn('Got an error.  Was expecting it prbly, but just in case:',err);
+            console.warn('Got an error.  Was expecting it prbly, but just in case:\n----------------------------',err,'\n----------------------------');
+            console.warn('Object.keys(err)',Object.keys(err));
+            console.warn('err.code ===',err.code);
+            console.warn('err.output ===',err.output);
             return done();
           }
 
