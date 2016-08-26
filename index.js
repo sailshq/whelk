@@ -15,6 +15,8 @@ var rttc = require('rttc');
 /**
  * asScript()
  *
+ * Build a live machine instance adapted for use as a command-line script.
+ *
  * (See README.md for more information.)
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  * @param  {Dictionary|Machine} optsOrMachineDef
@@ -23,9 +25,12 @@ var rttc = require('rttc');
  *         @property {Array?} envVarNamespace
  *         @property {SailsApp?} sails
  *
- * @return {Machine}
- *         A live machine instance, but warped to accept CLI args/opts & env vars.
- *         Also granted other special abilities.
+ * @return {LiveMachine}
+ *         A live machine instance, but warped to accept argins from
+ *         serial command-line args, system environment vars, and
+ *         command-line opts; and with pre-configured default exit
+ *         handler callbacks that, unless overridden, writes output
+ *         to stdout or stderr.
  */
 module.exports = function runMachineAsScript(optsOrMachineDef){
 
@@ -346,14 +351,14 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   //   ┴ └─┘  └─┘└─┘ ┴   ┴ ┴  ╩═╝╩ ╚╝ ╚═╝  ╩ ╩╩ ╩╚═╝╩ ╩╩╝╚╝╚═╝  ┴┘└┘└─┘ ┴ ┴ ┴┘└┘└─┘└─┘o
 
   // Build runtime input values from serial command-line arguments, system environment variables, and command-line options.
-  var inputConfiguration = {};
+  var argins = {};
 
   // Supply CLI options
   // (the ones that start with `-` or `--`)
   // =======================================================================================
-  _.extend(inputConfiguration, yargs.argv);
-  delete inputConfiguration._;
-  delete inputConfiguration.$0;
+  _.extend(argins, yargs.argv);
+  delete argins._;
+  delete argins.$0;
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // TODO: make the following usage work in the way you would expect:
@@ -378,7 +383,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
 
     // If environment variable exists, we'll grab its value and
     // supply it as configuration for this input.
-    inputConfiguration[inputName] = envVarData;
+    argins[inputName] = envVarData;
   });
 
 
@@ -398,7 +403,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   // of code names in `opts.args`.)
   if (_.isArray(opts.args)) {
     _.each(opts.args, function (inputName, i){
-      inputConfiguration[inputName] = envToSet.serialCommandLineArgs[i];
+      argins[inputName] = envToSet.serialCommandLineArgs[i];
     });
   }
 
@@ -410,13 +415,13 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   //
   // UPDATE: THIS WILL BE DEPRECATED SOON.  USE `env.serialCommandLineArgs` INSTEAD!!!
   if (_.isArray(envToSet.serialCommandLineArgs)) {
-    inputConfiguration.args = envToSet.serialCommandLineArgs;// << will be deprecated
+    argins.args = envToSet.serialCommandLineArgs;// << will be deprecated
   }
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
   // Finally, loop through each of the input configurations and run `rttc.parseHuman()`.
-  inputConfiguration = _.reduce(inputConfiguration, function (memo, val, inputName){
+  argins = _.reduce(argins, function (memo, val, inputName){
 
     // Skip special `args` input (unless there's actually an input named `args`.)
     var inputDef = wetMachine.inputs[inputName];
@@ -433,13 +438,13 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
     return memo;
   }, {});
 
-  // Set input values from CLI args/opts
-  var liveMachine = wetMachine(inputConfiguration);
+  // Set input values from serial command-line args / system environment variables / command-line opts
+  var liveMachine = wetMachine(argins);
 
 
   // console.log('----------------------------------------------------------------------');
   // console.log('serial command-line args: ',envToSet.serialCommandLineArgs);
-  // console.log('input configuration that was parsed: ',inputConfiguration);
+  // console.log('input configuration that was parsed: ',argins);
   // console.log('----------------------------------------------------------------------');
 
 
