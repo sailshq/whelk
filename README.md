@@ -28,7 +28,7 @@ require('machine-as-script')({
 });
 ```
 
-Now you can run your machine as a script and provide input values as CLI opts:
+Now you can run your machine as a script and provide input values as command-line opts:
 
 ```sh
 $ node ./add-numbers.js --a=4 --b=5
@@ -57,15 +57,15 @@ Aside from the [normal properties that go into a Node Machine definition](http:/
 | Option            | Type            | Description                                            |
 |:------------------|-----------------|:-------------------------------------------------------|
 | `machine`         | ((dictionary?)) | If specified, `machine-as-script` will use this as the machine definition.  Otherwise by default, it expects the machine definition to be passed in at the top-level. In that case, the non-standard (machine-as-script-specific) options are omitted when the machine is built).
-| `args`            | ((array?))      | The names of inputs, in order, to use for handling serial CLI arguments (more on that [below](#using-serial-cli-arguments)).
+| `args`            | ((array?))      | The names of inputs, in order, to use for handling serial command-line arguments (more on that [below](#using-serial-cli-arguments)).
 | `envVarNamespace` | ((string?))     | The namespace to use when mapping environment variables to runtime arguments for particular inputs (more on that [below](#using-environment-variables)).
-| `sails`           | ((SailsApp?))   | Only relevant if the machine def declares `habitat: 'sails'`.  This is the Sails app instance that will be provided to this machine as `env.sails`.  In most cases, if you are using this, you'll want to set it to `require('sails').  The Sails app instance will be automatically loaded before running the machine, and automatically lowered as soon as the machine exits.
+| `sails`           | ((SailsApp?))   | Only relevant if the machine def declares `habitat: 'sails'`.  This is the Sails app instance that will be provided to this machine as a habitat variable (`env.sails`).  In most cases, if you are using this, you'll want to set it to `require('sails').  The Sails app instance will be automatically loaded before running the machine, and automatically lowered as soon as the machine exits.
 
 
 
-## Using serial CLI arguments
+## Using serial command-line arguments
 
-In addition to specifying inputs as `--` CLI opts, you can configure your script to accept serial CLI arguments.
+In addition to specifying inputs as `--` command-line opts, you can configure your script to accept serial command-line arguments.
 
 Just specify `args` as an array of input names, in the expected order:
 
@@ -80,14 +80,14 @@ asScript({
 });
 ```
 
-Now you can use serial CLI arguments to configure the related inputs:
+Now you can use serial command-line arguments to configure the related inputs:
 
 ```sh
 $ node ./add-numbers.js 4 5
 # Got result: 9
 ```
 
-##### Experimental: The `args` input
+##### Experimental: The `serialCommandLineArgs` input
 
 If you don't already have an input named `args`, when using machine-as-action, your machine's `fn` will receive an array of serial command-line arguments in `inputs.args`.  **THIS IS AN EXPERIMENTAL FEATURE AND COULD CHANGE AT ANY TIME WITHOUT BACKWARDS COMPATIBILITY!!**
 
@@ -98,11 +98,11 @@ If you don't already have an input named `args`, when using machine-as-action, y
 ## Using environment variables
 
 Sometimes (particularly in a production setting, like on Heroku) you want to be able to
-use your machine as a script without specifying command-line arguments or checking in
+use your machine as a script without specifying serial command-line arguments or checking in
 credentials or other configuration details to source control.  This is typically accomplished
 using environment variables.
 
-When using `machine-as-script`, as an alternative to CLI opts, you can specify input values
+When using `machine-as-script`, as an alternative to command-line opts, you can specify input values
 using environment variables:
 
 ```sh
@@ -110,7 +110,7 @@ $ ___a=4 ___b=5 node ./add-numbers.js
 # Got result: 9
 ```
 
-Environment variables work exactly like CLI opts, with the same escaping rules for specifying JSON arrays and dictionaries.
+Environment variables work exactly like command-line opts, with the same escaping rules for specifying JSON arrays and dictionaries.
 
 
 ##### Setting a namespace
@@ -152,7 +152,7 @@ Note that input code names are _case-sensitive_, and therefore the names of envi
 
 ## Configuring non-string values
 
-So it's really easy to see how string input values can be configured using CLI opts, arguments, or environment variables.  But more often than not, when configuring a script, you need to specify an input value that _isn't_ a string-- things like arrays, dictionaries, booleans, and numbers.
+So it's really easy to see how string input values can be configured using command-line opts, arguments, or environment variables.  But more often than not, when configuring a script, you need to specify an input value that _isn't_ a string-- things like arrays, dictionaries, booleans, and numbers.
 
 This module lets you configure _any_ input value-- even lamdas.  Internally, it uses the [`parseHuman()` method from `rttc`](https://github.com/node-machine/rttc#parsehumanstringfromhuman-typeschemaundefined-unsafemodefalse).  For a more detailed look at the exact rules, check out the README in the rttc repo.  Below, we look at one example for each of the major use cases you're likely to run into.
 
@@ -228,20 +228,20 @@ To learn more about rttc types, check out the [rttc README on GitHub](https://gi
 
 ##### Escaping your input values
 
-The rules for escaping env vars, CLI opts, and CLI arguments can vary across operating systems.  However, a good reference point is the [escape machine in mp-process](http://node-machine.org/machinepack-process/escape).  That's what the `machinepack` command-line tool uses internally for creating code samples after a machine is run using `mp exec`.
+The rules for escaping env vars, command-line opts, and serial command-line arguments can vary across operating systems.  However, a good reference point is the [escape machine in mp-process](http://node-machine.org/machinepack-process/escape).  That's what the `machinepack` command-line tool uses internally for creating code samples after a machine is run using `mp exec`.
 
 ##### Precedence
 
-It's always best to keep things simple.  In keeping with that spirit, you should never _intentionally_ use both environment variables AND CLI opts/args to configure your script. But weird things are unavoidable, and when debugging, it's helpful to know more about the tools you use in case something jumps out.
+It's always best to keep things simple.  In keeping with that spirit, you should never _intentionally_ use both environment variables AND command-line opts/args to configure your script. But weird things are unavoidable, and when debugging, it's helpful to know more about the tools you use in case something jumps out.
 
 Starting from the highest precedence, here is a list of how this module prioritizes your input configurations:
 
-1. CLI arguments (`./my-script.js bar`)
-2. Environment variables (`foo=bar ./my-script.js`)
-3. CLI opts (`./my-script.js --foo='bar'`)
+1. Serial command-line arguments (`./my-script.js bar`)
+2. System environment variables (`foo=bar ./my-script.js`)
+3. Command-line opts (`./my-script.js --foo='bar'`)
 
 
-In other words, if you specify the same input as a CLI argument AND as an environment variable or CLI opt, the CLI argument will always "win".  And if you specify the same input as an environment variable and CLI opt, the environment variable will always win.
+In other words, if you specify the same input as a serial command-line argument AND as a system environment variable or command-line opt, the serial argument will always "win".  And if you specify the same input as a system environment variable and command-line opt, the system environment variable will always win.
 
 ##### Other Implementation Details, Edge Cases, and Conventions
 
