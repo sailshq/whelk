@@ -90,27 +90,37 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
 
       case 'args': (function (){
         if (!_.isArray(opts.args)) {
-          throw new Error('Invalid option: If specified, `args` should be provided as an array of strings.');
+          throw new Error('Invalid script: If specified, `args` should be provided as an array of strings.');
         }
+
         _.each(opts.args, function (targetInputCodeName){
-          var knownInputCodeNames = _.keys(machineDef.inputs||{});
-          if (!_.contains(knownInputCodeNames, targetInputCodeName)) {
-            throw new Error('Invalid option: `args` references an unrecognized input (`'+targetInputCodeName+'`).  Each item in `args` should be the code name of a known input defined in this machine!');
+
+          // Check that target input definition exists.
+          var targetInputDef = _.keys(machineDef.inputs||{});
+          if (!targetInputDef) {
+            throw new Error('Invalid script: `args` references an unrecognized input (`'+targetInputCodeName+'`).  Each item in `args` should be the code name of a known input defined in this machine definition.');
           }
-        });
+
+          // Check that target input definition does not explicitly expect a dictionary, array, or function.
+          if (targetInputDef.example === '->' || _.isObject(targetInputDef.example)) {
+            throw new Error('Invalid script: `args` references an input (`'+targetInputCodeName+'`) which, based on its `example`, is _never_ compatible with data from serial command-line arguments.');
+          }
+        });//</_.each() :: target input code name in the `opts.args` array>
+
+
       })(); break;
 
 
       case 'envVarNamespace': (function (){
         if (!_.isString(opts.envVarNamespace)) {
-          throw new Error('Invalid option: If specified, `envVarNamespace` should be provided as a string.');
+          throw new Error('Invalid script: If specified, `envVarNamespace` should be provided as a string.');
         }
       })(); break;
 
 
       case 'sails': (function (){
         if (!_.isObject(opts.sails) || opts.sails.constructor.name !== 'Sails') {
-          throw new Error('Invalid option: The supposed Sails app instance provided as `sails` seems a little sketchy.  Make sure you are doing `sails: require(\'sails\')`.');
+          throw new Error('Invalid script: The supposed Sails app instance provided as `sails` seems a little sketchy.  Make sure you are doing `sails: require(\'sails\')`.');
         }
         // Note that we do additional validations below.
         // (bcause at this point in the code, we can't yet guarantee the machine's `habitat` will be correct--
@@ -394,9 +404,6 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   // (^^ Note that we always supply `env.serialCommandLineArgs`, and that they're unaffected
   //  by the `args` directive.)
 
-
-  // TODO: if `args` points at inputs that are not strings, numbers, or booleans, freak out
-  // (maybe not here, but somewhere)
 
   // But if `opts.args` was provided, then we ALSO iterate through the serial command-line
   // args and provide them as values for the appropriate inputs (i.e. according to the order
