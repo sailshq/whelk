@@ -143,10 +143,10 @@ describe('running a script', function (){
   //  ███████║███████╗██║  ██║██║██║  ██║███████╗    ██║  ██║██║  ██║╚██████╔╝███████║
   //  ╚══════╝╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚══════╝    ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
   //
-  describe('and attempt to provide an argin via an UNEXPECTED serial command-line argument', function (){
+  describe('and provide serial command-line argument(s) when none are explicitly expected via `args`', function (){
     this.slow(1400);
 
-    it('should terminate with an error', function (done){
+    it('should work just like normal even though there\'s one extra serial cmdline arg', function (done){
 
       Process.executeCommand({
         dir: __dirname,
@@ -154,22 +154,32 @@ describe('running a script', function (){
         environmentVars: {},
         timeout: 1500
       }).exec(function (err,outs){
-        if (err){
-          try {
-            assert.equal(err.code, 1);
-          } catch (e) { return done(e); }
-          // console.warn('Got an error.  Was expecting it prbly, but just in case:',err);
-          return done();
-        }
+        if (err){ return done(err); }
+        try { assert.equal(outs.stdout, '[]'); }
+        catch (e) { return done(e); }
+        return done();
+      });
+    });//</it>
 
-        return done(new Error('Should have exited with an error (because unexpected serial args were provided)  But instead, script exited with normal code 0 and returned: '+util.inspect(outs, {depth:null})));
+    it('should work just like normal even though there\'s 2 extra serial cmdline args', function (done) {
+
+      Process.executeCommand({
+        dir: __dirname,
+        command: 'node ./fixtures/script-with-no-output.js sumthin sumthin_ELSE',
+        environmentVars: {},
+        timeout: 1500
+      }).exec(function (err,outs){
+        if (err){ return done(err); }
+        try { assert.equal(outs.stdout, '[]'); }
+        catch (e) { return done(e); }
+        return done();
       });
     });//</it>
 
   });//</describe :: and attempt to provide an argin via an UNEXPECTED serial command-line argument>
 
 
-  describe('and attempt to provide an extra argin via an UNEXPECTED 2ND serial command-line argument', function (){
+  describe('and attempt to provide a 2nd serial command-line argument, when only one is expected by `args`', function (){
     this.slow(1400);
 
     it('should terminate with an error', function (done){
@@ -182,9 +192,8 @@ describe('running a script', function (){
       }).exec(function (err,outs){
         if (err){
           try {
-            assert.equal(err.code, 1);
+            assert(err.stack.match('Too many serial command-line arguments were provided.'), new Error('Expected error to look different!  Here\'s what I got: '+err.stack));
           } catch (e) { return done(e); }
-          // console.warn('Got an error.  Was expecting it prbly, but just in case:',err);
           return done();
         }
 
@@ -239,10 +248,15 @@ describe('running a script', function (){
         if (err){
           try {
             assert.equal(err.code, 1);
-          } catch (e) { return done(new Error('Expected process exit code to be 1, but got `'+err.code+'`.  Raw error from script: '+err.stack)); }
+          } catch (e) {
+            return done(new Error('Expected process exit code to be 1, but got `'+err.code+'`.  Raw error from script: '+err.stack));
+          }
+
+          // --•
           return done();
         }
 
+        // --•
         return done(new Error('Should have exited with a runtime validation error (because an INVALID argin was provided).  But instead, script exited with normal code 0 and returned: '+util.inspect(outs, {depth:null})));
       });
     });//</it>
@@ -268,7 +282,6 @@ describe('running a script', function (){
             } catch (e) {
               return done(e);
             }
-            // console.warn('Got an error.  Was expecting it prbly, but just in case:\n**\n',err,'\n**');
             return done();
           }
 

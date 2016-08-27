@@ -395,8 +395,10 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
 
     return memo;
   }, argins);
+
+  // FUTURE:
+  // Make the following usage work in the way you would expect:
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  // TODO: make the following usage work in the way you would expect:
   // ```
   // kit exclaim --verbose 'my sweet code comment' wat --width '37'
   // ```
@@ -406,6 +408,18 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   //
   // (see https://github.com/yargs/yargs#booleankey for more info)
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+  // FUTURE:
+  // Consider something like the following:
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // // Check that we didn't receive any command-line opts that don't correspond with any recognized input.
+  // _.each(argins, function (supposedArgin, inputCodeName) {
+  //   var inputDef = wetMachine.inputs[inputCodeName];
+  //   if (!inputDef) {
+  //     throw new Error('Unrecognized option (`--'+inputCodeName+'`)');
+  //   }
+  // });//</_.each() :: argin so far; i.e. each command-line opt>
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
   //  ┌─┐┌─┐┬─┐┌─┐┌─┐  ╔═╗╦ ╦╔═╗╔╦╗╔═╗╔╦╗  ╔═╗╔╗╔╦  ╦╦╦═╗╔═╗╔╗╔╔╦╗╔═╗╔╗╔╔╦╗  ╦  ╦╔═╗╦═╗╔═╗
@@ -461,7 +475,22 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
         argins[inputCodeName] = rawSerialCommandLineArgs[i];
       }
     });//</each input code name in `opts.args`>
+
+    // If too many serial command-line arguments were provided, then throw an error.
+    // (This is because opts.args was set.)
+    if (rawSerialCommandLineArgs.length > opts.args.length) {
+      var extraSerialCommandLineArgs = rawSerialCommandLineArgs.slice(opts.args.length);
+      throw new Error(
+        'Too many serial command-line arguments were provided.  '+
+        'Did not recognize '+extraSerialCommandLineArgs.length+' extra argument'+(extraSerialCommandLineArgs.length === 1 ? '' : 's')+
+        ': '+extraSerialCommandLineArgs
+      );
+    }
   }
+  // > Note that we _allow_ there to be an ∞ number of serial command-line arguments if the
+  // > `opts.args` directive is NOT in use. (Consider the use case where you want a dynamic
+  // > number of serial command-line arguments)
+
 
   // Set ourselves up to expose `env.serialCommandLineArgs` in just a bit.
   habitatVarsToSet.serialCommandLineArgs = rawSerialCommandLineArgs;
@@ -483,7 +512,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
     // Skip special `args` input (unless there's actually an input named `args`.)
     var inputDef = wetMachine.inputs[inputCodeName];
     if (!inputDef) {
-      throw new Error('Unrecognized input ('+inputCodeName+')');
+      throw new Error('Consistency violation: Received argin for unrecognized input ('+inputCodeName+').  But that should never happen!');
     }
 
     // Now use `rttc.parseHuman()` to interpret the incoming data.
