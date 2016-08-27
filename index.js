@@ -587,33 +587,41 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
         // Since this is the error exit, we know that the output ALWAYS exists, and is ALWAYS an Error instance.
         var err = output;
 
-        // Check to see if this is a validation error.  If so, show more specialized output.
-        if (err.code === 'E_MACHINE_RUNTIME_VALIDATION') {
-          console.error(chalk.red('Could not run script.'));
-          console.error('Either a required option is missing, or one or more of the provided options are invalid.');
-          console.error('Details:');
-          console.error('----------------------------------------------------------------------');
-          console.log(err);
-          console.error(err.stack ? chalk.gray(err.stack) : err);
-          console.error('----------------------------------------------------------------------');
+
+
+        // If it's clear from the output that this is a runtime validation error _from
+        // this specific machine_ (and not from any machines it might call internally
+        // in its `fn`), show specialized output.
+        var isValidationError = err.code === 'E_MACHINE_RUNTIME_VALIDATION' && err.machineInstance === liveMachine;
+        if (isValidationError) {
+          // Sanity check:
+          if (!_.isArray(output.errors)) { throw new Error('Consistency violation: E_MACHINE_RUNTIME_VALIDATION errors should _always_ have an `errors` array.'); }
+
+          console.error(chalk.red(chalk.bold('Could not run script.')));
+          console.error(output.errors.length+' arg'+(output.errors.length>1?'s':'')+'/opt'+(output.errors.length>1?'s':'')+' '+(output.errors.length>1?'are':'is')+' missing or invalid:');
+          var prettyPrintedValidationErrorsStr = _.map(output.errors, function (rttcValidationErr){ return '  • '+rttcValidationErr.message; }).join('\n');
+          console.error(prettyPrintedValidationErrorsStr);
+
           return process.exit(1);
         }
         // Check to see if this is a timeout error.  If so, show more specialized output.
+        // (note that this might have originated from other machines this script calls internally
+        //  in its `fn` -- that's ok, the error is still meaningful.)
         else if (err.code === 'E_MACHINE_TIMEOUT') {
-          console.error(chalk.red('Script timed out before it finished.'));
+          console.error(chalk.red(chalk.bold('Script timed out before it finished.')));
           console.error('Details:');
           console.error('----------------------------------------------------------------------');
-          console.log(err);
+          console.log(chalk.gray(err));
           console.error(err.stack ? chalk.gray(err.stack) : err);
           console.error('----------------------------------------------------------------------');
           return process.exit(1);
         }
         // Otherwise, this is some kind of unexpected error:
         else {
-          console.error(chalk.red('Unexpected error occurred:'));
+          console.error(chalk.red(chalk.bold('Script encountered an unexpected error.')));
           console.error('Details:');
           console.error('----------------------------------------------------------------------');
-          console.log(err);
+          console.log(chalk.gray(err));
           console.error(err.stack ? chalk.gray(err.stack) : err);
           console.error('----------------------------------------------------------------------');
           return process.exit(1);
