@@ -294,9 +294,39 @@ describe('running a script', function (){
 
     describe('but with a command-line option provided instead', function (){
 
+      it('should work just like normal', function (done) {
+        Process.executeCommand({
+          dir: __dirname,
+          command: 'node ./fixtures/script-expecting-one-required-string-as-serial-arg.js --something=\'sumthin\'',
+          environmentVars: {},
+          timeout: 1500
+        }).exec(function (err,outs){
+          if (err){ return done(err); }
+          try {
+            assert.equal(outs.stdout, 'got "sumthin"');
+          } catch (e) { return done(e); }
+          return done();
+        });
+      });//</it>
+
     });//</describe :: but with a command-line option provided instead>
 
     describe('but with an environment variable provided instead', function (){
+
+      it('should work just like normal', function (done) {
+        Process.executeCommand({
+          dir: __dirname,
+          command: '___something=\'sumthin\' node ./fixtures/script-expecting-one-required-string-as-serial-arg.js',
+          environmentVars: {},
+          timeout: 1500
+        }).exec(function (err,outs){
+          if (err){ return done(err); }
+          try {
+            assert.equal(outs.stdout, 'got "sumthin"');
+          } catch (e) { return done(e); }
+          return done();
+        });
+      });//</it>
 
     });//</describe :: but with an environment variable provided instead>
 
