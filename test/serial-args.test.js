@@ -239,8 +239,7 @@ describe('running a script', function (){
         if (err){
           try {
             assert.equal(err.code, 1);
-          } catch (e) { return done(e); }
-          // console.warn('Got an error.  Was expecting it prbly, but just in case:',err);
+          } catch (e) { return done(new Error('Expected process exit code to be 1, but got `'+err.code+'`.  Raw error from script: '+err.stack)); }
           return done();
         }
 

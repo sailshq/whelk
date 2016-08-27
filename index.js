@@ -490,7 +490,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
     try {
       memo[inputCodeName] = rttc.parseHuman(val, rttc.infer(inputDef.example));
     } catch (e) {
-      if (e.code === 'E_INVALD') {
+      if (e.code === 'E_INVALID') {
         // If parsing fails because the human string can't be lightly coerced to match the type schema,
         // then just set the raw human string as the argin and let the machine runner's validation take
         // care of it.
