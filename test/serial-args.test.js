@@ -190,7 +190,7 @@ describe('running a script', function (){
         environmentVars: {},
         timeout: 1500
       }).exec(function (err,outs){
-        if (err){
+        if (err) {
           try {
             assert(err.stack.match('Too many serial command-line arguments were provided.'), new Error('Expected error to look different!  Here\'s what I got: '+err.stack));
           } catch (e) { return done(e); }
