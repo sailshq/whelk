@@ -490,7 +490,15 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
     try {
       memo[inputCodeName] = rttc.parseHuman(val, rttc.infer(inputDef.example));
     } catch (e) {
-      throw new Error('Consistency violation: Could not parse the value specified for `'+inputCodeName+'`.  Details: '+e.stack);
+      if (e.code === 'E_INVALD') {
+        // If parsing fails because the human string can't be lightly coerced to match the type schema,
+        // then just set the raw human string as the argin and let the machine runner's validation take
+        // care of it.
+        memo[inputCodeName] = val;
+      }
+      else {
+        throw new Error('Consistency violation: Could not parse the value specified for `'+inputCodeName+'`.  Details: '+e.stack);
+      }
     }
 
     return memo;
