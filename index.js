@@ -573,17 +573,6 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
 
     // Build a callback for this exit that appropriately terminates the process for this script.
     callbacks[exitCodeName] = function terminateApropos(output){
-      // This spinlock protects against the machine calling more than one
-      // exit, or the same exit twice.
-      if (exitAttempts.length > 0) {
-        console.warn('Consistency violation: When running this script, the underlying implementation called its exits '+
-        'more than once!  A script should _always_ call exactly one exit.  This particular unexpected extra termination '+
-        'of the script process was attempted via the `'+exitCodeName+'` exit.  It was ignored.  For debugging purposes, '+
-        'here is a list of all exit/response attempts made by this script:',exitAttempts);
-        return;
-      }
-      exitAttempts.push(exitCodeName);
-
 
       //  ┌┬┐┌─┐┌─┐┌─┐┬ ┬┬ ┌┬┐  ╔═╗╦═╗╦═╗╔═╗╦═╗  ┬ ┬┌─┐┌┐┌┌┬┐┬  ┌─┐┬─┐
       //   ││├┤ ├┤ ├─┤│ ││  │   ║╣ ╠╦╝╠╦╝║ ║╠╦╝  ├─┤├─┤│││ │││  ├┤ ├┬┘
@@ -864,21 +853,25 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
           // https://nodejs.org/api/process.html#process_process_exit_code
           // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-          // This spinlock protects against the machine calling more than one
+
+          // The following spinlock protects against the machine calling more than one
           // exit, or the same exit twice.
-          if (exitAttempts.length > 0) {
-            console.warn('Consistency violation: When running this script, the underlying implementation called its exits '+
-            'more than once!  A script should _always_ call exactly one exit.  This particular unexpected extra termination '+
-            'of the script process was ignored.  For debugging purposes, here is a list of all exit/response attempts made by '+
-            'this script:',exitAttempts);
-            return;
-          }
           var exitCodeNameToTrack = (function _getExitCodeNameToTrack (){
             if (!sbErr) { return 'success'; }
             else if (sbErr.exit) { return sbErr.exit; }
             else { return 'error'; }
           })();//</self-calling function :: _getExitCodeNameToTrack()>
+
+          if (exitAttempts.length > 0) {
+            console.warn('Consistency violation: When running this script, the underlying implementation called its exits '+
+            'more than once!  A script should _always_ call exactly one exit.  This particular unexpected extra termination '+
+            'of the script process was attempted via the `'+exitCodeNameToTrack+'` exit.  It was ignored.  For debugging purposes, '+
+            'here is a list of all exit attempts made by this script:',exitAttempts);
+            return;
+          }
+
           exitAttempts.push(exitCodeNameToTrack);
+
 
         });//</running self-calling function :: _doTeardownMaybe()>
       }]);//</calling underlying .exec() -- i.e. running the machine `fn`>
