@@ -564,16 +564,25 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   // Now build up a default handler callback for each exit.
   // (Note that these can be overridden though!)
   var callbacks = {};
-  // We use a local variable (`alreadyExited`) as a spinlock.
-  var alreadyExited;
+
+  // We use a local variable (`exitAttempts`) as a spinlock.
+  // (it tracks the code names of _which_ exit(s) were already triggered)
+  var exitAttempts = [];
+
   _.each(_.keys(wetMachine.exits), function builtExitCallback(exitCodeName){
 
-    // Build a callback for this exit that sends the appropriate response.
-    callbacks[exitCodeName] = function respondApropos(output){
+    // Build a callback for this exit that appropriately terminates the process for this script.
+    callbacks[exitCodeName] = function terminateApropos(output){
       // This spinlock protects against the machine calling more than one
       // exit, or the same exit twice.
-      if (alreadyExited) { return; }
-      alreadyExited = true;
+      if (exitAttempts.length > 0) {
+        console.warn('Consistency violation: When running this script, the underlying implementation called its exits '+
+        'more than once!  A script should _always_ call exactly one exit.  This particular unexpected extra termination '+
+        'of the script process was attempted via the `'+exitCodeName+'` exit.  It was ignored.  For debugging purposes, '+
+        'here is a list of all exit/response attempts made by this script:',exitAttempts);
+        return;
+      }
+      exitAttempts.push(exitCodeName);
 
 
       //  ┌┬┐┌─┐┌─┐┌─┐┬ ┬┬ ┌┬┐  ╔═╗╦═╗╦═╗╔═╗╦═╗  ┬ ┬┌─┐┌┐┌┌┬┐┬  ┌─┐┬─┐
