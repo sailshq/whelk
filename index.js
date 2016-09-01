@@ -616,7 +616,13 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
         // Check to see if this is a timeout error.  If so, show more specialized output.
         // (note that this might have originated from other machines this script calls internally
         //  in its `fn` -- that's ok, the error is still meaningful.)
+        //
         else if (err.code === 'E_MACHINE_TIMEOUT') {
+          // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+          // > Note: Since this calls `process.exit(1)`, it means that `machine-as-script` effectively
+          // > honors the `timeout` property that can be specified at the top-level of a compact node
+          // > machine definition.
+          // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
           console.error(chalk.red(chalk.bold('Script timed out before it finished.')));
           console.error('Details:');
           console.error('----------------------------------------------------------------------');
@@ -857,6 +863,22 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
           // For more background, see:
           // https://nodejs.org/api/process.html#process_process_exit_code
           // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+          // This spinlock protects against the machine calling more than one
+          // exit, or the same exit twice.
+          if (exitAttempts.length > 0) {
+            console.warn('Consistency violation: When running this script, the underlying implementation called its exits '+
+            'more than once!  A script should _always_ call exactly one exit.  This particular unexpected extra termination '+
+            'of the script process was ignored.  For debugging purposes, here is a list of all exit/response attempts made by '+
+            'this script:',exitAttempts);
+            return;
+          }
+          var exitCodeNameToTrack = (function _getExitCodeNameToTrack (){
+            if (!sbErr) { return 'success'; }
+            else if (sbErr.exit) { return sbErr.exit; }
+            else { return 'error'; }
+          })();//</self-calling function :: _getExitCodeNameToTrack()>
+          exitAttempts.push(exitCodeNameToTrack);
 
         });//</running self-calling function :: _doTeardownMaybe()>
       }]);//</calling underlying .exec() -- i.e. running the machine `fn`>
