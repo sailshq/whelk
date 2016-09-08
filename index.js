@@ -638,9 +638,9 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
       // Default `success` behavior
       else if (exitCodeName === 'success') {
 
-        // If no output was received, then simply log "OK" and call it a day.
+        // If no output was received, then simply call it a day.
         if (_.isUndefined(output)) {
-          console.log(chalk.green('OK.'));
+          return;
         }
         // Otherwise, output was received.
         else {
