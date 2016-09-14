@@ -186,17 +186,19 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   //   • naked functions (builds them into an anonymous machine automatically.  For convenience and quick prototyping)
 
   // But since we're modifying the machine definition here...
-  // (TODO: consider moving this into machine runner-- but need to do that _carefully_-- there's complexities in there)
   // we need to duck-type the provided machine to determine whether or not it is an already-instantiated machine or not.
   // If it is, use as-is. Otherwise, use the definition to build a new machine.
   // (checks new `isWetMachine` property, but also the function name for backwards compatibility)
+  //
+  // > TODO: consider moving this check into machine runner
   var wetMachine;
-  if ( machineDef.isWetMachine || machineDef.name==='_callableMachineWrapper') {
+  if (machineDef.isWetMachine || machineDef.name==='_callableMachineWrapper') {
     wetMachine = machineDef;
   }
   else {
+    var scriptIdentity =  machineDef.identity || (machineDef.friendlyName ? _.kebabCase(machineDef.friendlyName) : 'anonymous-machine-as-script');
     wetMachine = Machine.build(_.extend({
-      identity: machineDef.identity || (machineDef.friendlyName ? _.kebabCase(machineDef.friendlyName) : 'anonymous-machine-as-script'),
+      identity: scriptIdentity,
       inputs: {},
       exits: {
         success: {
@@ -207,10 +209,10 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
         }
       },
       fn: function (inputs, exits){
-        exits.error(new Error('Not implemented yet! (This is a default `fn` injected by `machine-as-script`.)'));
+        exits.error(new Error('This script (`'+scriptIdentity+'`) is not implemented yet! (Ran stub `fn` injected by `machine-as-script`.)'));
       }
-    },machineDef));
-  }
+    }, machineDef));
+  }//</else :: the provided machine def is not a pre-built, "wet" machine instance>
 
 
   //   ██████╗██╗  ██╗███████╗ ██████╗██╗  ██╗
