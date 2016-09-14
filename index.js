@@ -893,7 +893,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   //  ├─┘├┬┘│ │└┐┌┘│ ││├┤   ║╣ ║║║╚╗╔╝   │ │ │  │││├─┤│  ├─┤││││├┤   ├┤ │││
   //  ┴  ┴└─└─┘ └┘ ┴─┴┘└─┘  ╚═╝╝╚╝ ╚╝    ┴ └─┘  ┴ ┴┴ ┴└─┘┴ ┴┴┘└┘└─┘  └  ┘└┘
   //
-  // Now provide `env.
+  // Now provide `env`.
   //
   // This allows us to provide access to special "habitat variables" for
   // this particular machine runtime (i.e. `machine-as-script`), as well
@@ -907,6 +907,11 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   // arguments, it _always_ provides ``env.serialCommandLineArgs`.
   // > Note: If there are no serial command-line arguments, then
   // > `env.serialCommandLineArgs` is an empty array).
+  //
+  // Finally, also note that we set `stack` to `false`.
+  // > This communicates to the machine runner that it should not auto-generate
+  // > a stack trace for when `.exec()` is called on this machine.
+  habitatVarsToSet.stack = false;
   liveMachine.setEnv(habitatVarsToSet);
 
 
