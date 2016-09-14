@@ -587,20 +587,39 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
         // Since this is the error exit, we know that the output ALWAYS exists, and is ALWAYS an Error instance.
         var err = output;
 
+        // Build base failure msg (used below)
+        var baseFailureMsg = 'Could not ';
+        if (machineDef.description) {
+          baseFailureMsg += machineDef.description[0].toLowerCase() + machineDef.description.slice(1);
+        }
+        else {
+          baseFailureMsg += 'run script.';
+        }
 
+
+        // Check what kind of catchall `error` this is.
+        var isValidationError = err.code === 'E_MACHINE_RUNTIME_VALIDATION' && err.machineInstance === liveMachine;
+        var isTimeoutError = err.code === 'E_MACHINE_TIMEOUT';// TODO: add check like `&& err.machineInstance === liveMachine;`
 
         // If it's clear from the output that this is a runtime validation error _from
         // this specific machine_ (and not from any machines it might call internally
         // in its `fn`), show specialized output.
-        var isValidationError = err.code === 'E_MACHINE_RUNTIME_VALIDATION' && err.machineInstance === liveMachine;
         if (isValidationError) {
           // Sanity check:
           if (!_.isArray(output.errors)) { throw new Error('Consistency violation: E_MACHINE_RUNTIME_VALIDATION errors should _always_ have an `errors` array.'); }
 
-          console.error(chalk.red(chalk.bold('Could not run script.')));
+          // console.error();
+          // console.error(chalk.bold.dim('• • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • '));
+          // console.error(chalk.bold.bgRed(baseFailureMsg));
+          // console.error(chalk.bold.red(baseFailureMsg));
+          // console.error(chalk.bold(baseFailureMsg));
+          console.error(baseFailureMsg);
+          // console.error();
           console.error(output.errors.length+' arg'+(output.errors.length>1?'s':'')+'/opt'+(output.errors.length>1?'s':'')+' '+(output.errors.length>1?'are':'is')+' missing or invalid:');
           var prettyPrintedValidationErrorsStr = _.map(output.errors, function (rttcValidationErr){ return '  • '+rttcValidationErr.message; }).join('\n');
           console.error(prettyPrintedValidationErrorsStr);
+          // console.error(chalk.bold.dim('• • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • '));
+          console.error();
 
           return process.exit(1);
         }
@@ -608,28 +627,36 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
         // (note that this might have originated from other machines this script calls internally
         //  in its `fn` -- that's ok, the error is still meaningful.)
         //
-        else if (err.code === 'E_MACHINE_TIMEOUT') {
+        else if (isTimeoutError) {
+          // TODO: do a machine
           // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
           // > Note: Since this calls `process.exit(1)`, it means that `machine-as-script` effectively
           // > honors the `timeout` property that can be specified at the top-level of a compact node
           // > machine definition.
           // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-          console.error(chalk.red(chalk.bold('Script timed out before it finished.')));
-          console.error('Details:');
-          console.error('----------------------------------------------------------------------');
-          console.log(chalk.gray(err));
-          console.error(err.stack ? chalk.gray(err.stack) : err);
-          console.error('----------------------------------------------------------------------');
+          // console.error(chalk.red.bold(baseFailureMsg));
+          console.error(baseFailureMsg);
+          console.error(chalk.reset('This is taking too long.'));
+          console.error(chalk.gray('Should have finished in '+chalk.bold(machineDef.timeout+'ms')+' or less.'));
+          console.error();
           return process.exit(1);
         }
         // Otherwise, this is some kind of unexpected error:
         else {
-          console.error(chalk.red(chalk.bold('Script encountered an unexpected error.')));
-          console.error('Details:');
-          console.error('----------------------------------------------------------------------');
-          console.log(chalk.gray(err));
-          console.error(err.stack ? chalk.gray(err.stack) : err);
-          console.error('----------------------------------------------------------------------');
+          var stackLines = err.stack.split('\n');
+          // console.error(chalk.reset('Script encountered an unexpected error:'));
+          // console.error(chalk.bgRed.bold('Script encountered an unexpected error.'));
+          // console.error(chalk.red.bold('Script failed.'));
+          // console.error();
+          // console.error(chalk.reset('Script failed.'));
+          console.error(baseFailureMsg);
+          // console.error(chalk.reset('----------------------------------------------------------------------'));
+          // console.error(chalk.reset('- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - '));
+          console.error(chalk.reset(stackLines[0]));
+          console.error(chalk.dim(stackLines.slice(1).join('\n')));
+          // console.error(chalk.reset('- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - '));
+          // console.error(chalk.reset('----------------------------------------------------------------------'));
+          console.error();
           return process.exit(1);
         }
       }//</if :: the machine called `exits.error()` for whatever reason>
