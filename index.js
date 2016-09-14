@@ -816,12 +816,12 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
           if (!sbErr) {
 
             // Determine the appropriate callback to call, and then call it.
-            if (_.isObject(argumentPassedToExec)) {
+            if (_.isFunction(argumentPassedToExec)) {
+              argumentPassedToExec(undefined, successResult);
+            }
+            else if (_.isObject(argumentPassedToExec)) {
               if (argumentPassedToExec.success) { argumentPassedToExec.success(successResult); }
               else { callbacks.success(successResult); }
-            }
-            else if (_.isFunction(argumentPassedToExec)) {
-              argumentPassedToExec(undefined, successResult);
             }
             else { callbacks.success(successResult); }
 
@@ -852,11 +852,11 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
             var outputToUse = _.isUndefined(sbErr.output) ? sbErr : sbErr.output;
 
             // Determine the appropriate callback to call, and then call it.
-            if (_.isObject(argumentPassedToExec) && _.contains(_.keys(argumentPassedToExec), sbErr.exit)) {
-              argumentPassedToExec[sbErr.exit](outputToUse);
-            }
-            else if (_.isFunction(argumentPassedToExec)) {
+            if (_.isFunction(argumentPassedToExec)) {
               argumentPassedToExec(sbErr);
+            }
+            else if (_.isObject(argumentPassedToExec) && _.contains(_.keys(argumentPassedToExec), sbErr.exit)) {
+              argumentPassedToExec[sbErr.exit](outputToUse);
             }
             else if (_.contains(_.keys(callbacks), sbErr.exit)) {
               callbacks[sbErr.exit](outputToUse);
