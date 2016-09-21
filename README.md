@@ -310,11 +310,11 @@ In other words, if you specify the same input as a serial command-line argument 
 
 ##### How it works
 
-`machine-as-action` works by building a modified version of a machine instance that, when you call `.exec()`, will proxy its input values from serial command-line arguments (`myscript bar`), command-line opts (`myscript --foo='bar'`), and/or system environment variables (`___foo='bar' myscript`).
+`machine-as-script` works by building a modified version of a machine instance that, when you call `.exec()`, will proxy its input values from serial command-line arguments (`myscript bar`), command-line opts (`myscript --foo='bar'`), and/or system environment variables (`___foo='bar' myscript`).
 
 ##### Conventions
 
-You should almost always call `.exec()` immediately after using `machine-as-action`, in the same file.  If you are building a command-line tool, it is conventional to keep these files in your project's `bin/` directory (see the `treeline` and `machinepack` CLI tools on NPM for examples).
+You should almost always call `.exec()` immediately after using `machine-as-script`, in the same file.  If you are building a command-line tool, it is conventional to keep these files in your project's `bin/` directory (see the `treeline` and `machinepack` CLI tools on NPM for examples).
 
 If, when you call `.exec()`, you omit a callback for a non-standard exit, the standard behavior of the machine runner applies.  If you omit `error` or `success`, machine-as-script will attempt its best guess at appropriate output by using exit metadata + introspecting runtime output.  Similarly, runtime input values are validated vs. the exemplars and requiredness in the machine's input definitions.
 
