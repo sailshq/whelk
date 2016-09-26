@@ -696,6 +696,15 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
           else { }
 
         }//</else :: output was received>
+
+        //--•
+        // If the process has not already been explicitly terminated
+        // by throwing an uncaught fatal error above, then we SHOULD
+        // just be able to let it exit naturally.  But just in case
+        // there are any lingering event listeners, etc, we'll manually
+        // exit with a status code of 0.
+        return process.exit(0);
+
       }//</if :: the machine called `exits.success()`>
       // ‡
       //  ┌┬┐┌─┐┌─┐┌─┐┬ ┬┬ ┌┬┐  ╔╦╗╦╔═╗╔═╗╔═╗╦  ╦  ╔═╗╔╗╔╔═╗╔═╗╦ ╦╔═╗  ┌─┐─┐ ┬┬┌┬┐  ┬ ┬┌─┐┌┐┌┌┬┐┬  ┌─┐┬─┐
@@ -705,11 +714,14 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
       else {
         console.log(chalk.cyan('Something went wrong:'));
         console.error(output.stack ? chalk.gray(output.stack) : output);
-      }//</else :: the machine called some other miscellaneous exit>
 
-      //--•
-      // If the process has not already been explicitly terminated
-      // by `process.exit(1)` above, then let it exit naturally.
+        //--•
+        // We SHOULD just be able to let the process exit naturally.
+        // But just in case there are any lingering event listeners,
+        // etc, we'll manually exit with a status code of 0.
+        return process.exit(0);
+
+      }//</else :: the machine called some other miscellaneous exit>
 
     };//</defined default callback for this exit>
 
