@@ -669,7 +669,11 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
 
         // If no output was received, then simply call it a day.
         if (_.isUndefined(output)) {
-          return;
+          //--•
+          // We SHOULD just be able to let the process exit naturally.
+          // But just in case there are any lingering event listeners,
+          // etc, we'll manually exit with a status code of 0.
+          return process.exit(0);
         }
         // Otherwise, output was received.
         else {
@@ -695,15 +699,14 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
           // (So don't log anything.)
           else { }
 
-        }//</else :: output was received>
+          // If the process has not already been explicitly terminated
+          // by throwing an uncaught fatal error above, then we SHOULD
+          // just be able to let it exit naturally.  But just in case
+          // there are any lingering event listeners, etc, we'll manually
+          // exit with a status code of 0.
+          return process.exit(0);
 
-        //--•
-        // If the process has not already been explicitly terminated
-        // by throwing an uncaught fatal error above, then we SHOULD
-        // just be able to let it exit naturally.  But just in case
-        // there are any lingering event listeners, etc, we'll manually
-        // exit with a status code of 0.
-        return process.exit(0);
+        }//</else :: output was received>
 
       }//</if :: the machine called `exits.success()`>
       // ‡
