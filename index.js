@@ -951,10 +951,34 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   // > `env.serialCommandLineArgs` is an empty array).
   //
   // Finally, also note that we set `stack` to `false`.
-  // > This communicates to the machine runner that it should not auto-generate
-  // > a stack trace for when `.exec()` is called on this machine.
+  // > This communicates to the machine runner that, just in case
+  // > experimental stack trace munging is enabled, it should not
+  // > auto-generate a stack trace for when `.exec()` is called on
+  // > this machine (since we're inside another wrapper module here,
+  // > and the additional stack entries would not be useful).
   habitatVarsToSet.stack = false;
-  liveMachine.setEnv(habitatVarsToSet);
+  if (liveMachine.setEnv){
+    liveMachine.setEnv(habitatVarsToSet);
+  }
+  // Fall back to `setEnvironment` for older versions of the machine runner.
+  else if (liveMachine.setEnvironment) {
+    console.warn(
+      chalk.bold.yellow('Note:')+'  The provided, pre-built machine (`'+chalk.bold.red(liveMachine.friendlyName||liveMachine.identity)+'`) does not support `.setEnv()`,\n'+
+      'presumably because it comes from a machinepack that is using an older version\n'+
+      'of the machine runner.  Nevertheless, it does seem to support the traditional\n'+
+      'usage (`setEnvironment()`), which should do the trick...\n'+
+      chalk.gray(
+      '|  If you happen to be the maintainer of the source machinepack, then please\n'+
+      '|  upgrade your pack to the latest version of the machine runner.'
+      )+
+      '\n'
+    );
+    liveMachine.setEnvironment(habitatVarsToSet);
+  }
+  // If even THAT doesn't work, then give up-- failing w/ a fatal error.
+  else {
+    throw new Error('The provided pre-built ("wet") machine does not support `.setEnv()`, presumably because it was built with an older version of the machine runner.  Automatically tried to use `setEnvironment()` as well, but that didn\'t work either.  So please try "dehydrating" the machine by entering its `inputs`, `exits`, `fn`, etc. manually.  (If you happen to be the author of the source machinepack, then please upgrade your pack to the latest version of the machine runner.)  If you experience further issues, please visit http://sailsjs.com/support for help.');
+  }//>-•
 
 
 
