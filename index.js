@@ -768,11 +768,11 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   liveMachine.exec = function (argumentPassedToExec) {
 
     // Do some setup (maybe)
-    (function _doSetupMaybe (done){
+    (function _doSetupMaybe (proceed){
 
       // If we're not managing a Sails app instance for this script, then just proceed.
       if (_.isUndefined(habitatVarsToSet.sails)) {
-        return done();
+        return proceed();
       }
 
       // --•
@@ -781,18 +781,29 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
       //  │  │ │├─┤ ││  └─┐├─┤││  └─┐
       //  ┴─┘└─┘┴ ┴─┴┘  └─┘┴ ┴┴┴─┘└─┘
       // Load the Sails app.
-      habitatVarsToSet.sails.load(function (err){
+      //
+      // > Note that we mix in env vars, CLI opts, and the .sailsrc file using
+      // > the `.getRc()` method, if possible.
+      var configOverides = {};
+      if (!_.isUndefined(habitatVarsToSet.sails.getRc)) {
+        try {
+          configOverrides = habitatVarsToSet.sails.getRc();
+        } catch (e) { return proceed(e); }
+      }//>-
+
+      habitatVarsToSet.sails.load(configOverrides, function (err){
         if (err) {
-          return done(new Error('This script relies on access to Sails, but when attempting to load this Sails app automatically, an error occurred.  Details: '+err.stack));
+          return proceed(new Error('This script relies on access to Sails, but when attempting to load this Sails app automatically, an error occurred.  Details: '+err.stack));
         }
 
         // --•
-        return done();
+        return proceed();
       });//</after sails.load()>
     })(function afterMaybeDoingSetup(setupErr) {
       // If a setup error occurred, crash the process!
       // (better to terminate the process than run the script with faulty expectations)
       if (setupErr) {
+        console.error('Something went wrong when trying to load this Sails app:');
         throw setupErr;
       }
 
