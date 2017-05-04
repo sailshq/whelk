@@ -23,7 +23,7 @@ asScript({
     }
   },
   fn: function (inputs, exits){
-    var _ = require('lodash');
+    var _ = require('@sailshq/lodash');
 
     if (_.isUndefined(inputs.highScore)) {
       return exits.success('No high score provided.  You must be bad at this game.');

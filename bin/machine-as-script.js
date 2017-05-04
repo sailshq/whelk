@@ -13,7 +13,7 @@
 
 var path = require('path');
 var yargs = require('yargs');
-var _ = require('lodash');
+var _ = require('@sailshq/lodash');
 var chalk = require('chalk');
 var asScript = require('../');
 

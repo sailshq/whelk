@@ -22,7 +22,7 @@ asScript({
     }
   },
   fn: function (inputs, exits){
-    var _ = require('lodash');
+    var _ = require('@sailshq/lodash');
 
     if (_.isUndefined(inputs.something)) {
       return exits.success('Nothing was provided!  Can\'t I have something?');
