@@ -784,7 +784,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
       //
       // > Note that we mix in env vars, CLI opts, and the .sailsrc file using
       // > the `.getRc()` method, if possible.
-      var configOverides = {};
+      var configOverrides = {};
       if (!_.isUndefined(habitatVarsToSet.sails.getRc)) {
         try {
           configOverrides = habitatVarsToSet.sails.getRc();
