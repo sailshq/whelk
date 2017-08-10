@@ -327,4 +327,4 @@ For more help, check out the [node-machine newsgroup](https://groups.google.com/
 
 ## License
 
-MIT &copy; 2015-2016 Mike McNeil, The Treeline Co.
+MIT &copy; 2015-2017 Mike McNeil, Sails Co.
