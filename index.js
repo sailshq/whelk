@@ -935,52 +935,44 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
 
 
 
-  //     ███████╗███████╗████████╗███████╗███╗   ██╗██╗   ██╗     ██╗██╗
-  //     ██╔════╝██╔════╝╚══██╔══╝██╔════╝████╗  ██║██║   ██║    ██╔╝╚██╗
-  //     ███████╗█████╗     ██║   █████╗  ██╔██╗ ██║██║   ██║    ██║  ██║
-  //     ╚════██║██╔══╝     ██║   ██╔══╝  ██║╚██╗██║╚██╗ ██╔╝    ██║  ██║
-  //  ██╗███████║███████╗   ██║   ███████╗██║ ╚████║ ╚████╔╝     ╚██╗██╔╝
-  //  ╚═╝╚══════╝╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═══╝  ╚═══╝       ╚═╝╚═╝
+  //     ███╗   ███╗███████╗████████╗ █████╗  ██╗██╗
+  //     ████╗ ████║██╔════╝╚══██╔══╝██╔══██╗██╔╝╚██╗
+  //     ██╔████╔██║█████╗     ██║   ███████║██║  ██║
+  //     ██║╚██╔╝██║██╔══╝     ██║   ██╔══██║██║  ██║
+  //  ██╗██║ ╚═╝ ██║███████╗   ██║   ██║  ██║╚██╗██╔╝
+  //  ╚═╝╚═╝     ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═╝╚═╝
   //
-  //  ┌─┐┬─┐┌─┐┬  ┬┬┌┬┐┌─┐  ╔═╗╔╗╔╦  ╦  ┌┬┐┌─┐  ┌┬┐┌─┐┌─┐┬ ┬┬┌┐┌┌─┐  ┌─┐┌┐┌
-  //  ├─┘├┬┘│ │└┐┌┘│ ││├┤   ║╣ ║║║╚╗╔╝   │ │ │  │││├─┤│  ├─┤││││├┤   ├┤ │││
-  //  ┴  ┴└─└─┘ └┘ ┴─┴┘└─┘  ╚═╝╝╚╝ ╚╝    ┴ └─┘  ┴ ┴┴ ┴└─┘┴ ┴┴┘└┘└─┘  └  ┘└┘
+  //  ┌─┐┬─┐┌─┐┬  ┬┬┌┬┐┌─┐  ╔╦╗╔═╗╔╦╗╔═╗  ┌┬┐┌─┐  ┌┬┐┌─┐┌─┐┬ ┬┬┌┐┌┌─┐  ┌─┐┌┐┌
+  //  ├─┘├┬┘│ │└┐┌┘│ ││├┤   ║║║║╣  ║ ╠═╣   │ │ │  │││├─┤│  ├─┤││││├┤   ├┤ │││
+  //  ┴  ┴└─└─┘ └┘ ┴─┴┘└─┘  ╩ ╩╚═╝ ╩ ╩ ╩   ┴ └─┘  ┴ ┴┴ ┴└─┘┴ ┴┴┘└┘└─┘  └  ┘└┘
   //
-  // Now provide `env`.
+  // Now provide `this`.
   //
-  // This allows us to provide access to special "habitat variables" for
-  // this particular machine runtime (i.e. `machine-as-script`), as well
-  // as any other scope specific to the machine's habitat.
+  // This allows us to provide access to special metadata (aka "habitat variables")
+  // this particular machine runner (i.e. `machine-as-script`), as well
+  // as any other scope specific to our habitat.
   //
   // For example, if this machine declares the "sails" habitat, then we
   // must be managing a Sails app instance for this script.  So we pass
-  // through that Sails app instance as `env.sails`.
+  // through that Sails app instance as `this.sails`.
   //
   // Similarly, since `machine-as-script` parses serial command-line
   // arguments, it _always_ provides ``env.serialCommandLineArgs`.
   // > Note: If there are no serial command-line arguments, then
   // > `env.serialCommandLineArgs` is an empty array).
-  //
-  // Finally, also note that we set `stack` to `false`.
-  // > This communicates to the machine runner that, just in case
-  // > experimental stack trace munging is enabled, it should not
-  // > auto-generate a stack trace for when `.exec()` is called on
-  // > this machine (since we're inside another wrapper module here,
-  // > and the additional stack entries would not be useful).
-  habitatVarsToSet.stack = false;
-  if (liveMachine.setEnv){
-    liveMachine.setEnv(habitatVarsToSet);
+  if (liveMachine.meta){
+    liveMachine.meta(habitatVarsToSet);
   }
   // Fall back to `setEnvironment` for older versions of the machine runner.
   else if (liveMachine.setEnvironment) {
     console.warn(
-      chalk.bold.yellow('Note:')+'  The provided, pre-built machine (`'+chalk.bold.red(liveMachine.friendlyName||liveMachine.identity)+'`) does not support `.setEnv()`,\n'+
-      'presumably because it comes from a machinepack that is using an older version\n'+
+      chalk.bold.yellow('Note:')+'  The provided, pre-built function (`'+chalk.bold.red(liveMachine.friendlyName||liveMachine.identity)+'`) does not support `.meta()`,\n'+
+      'presumably because it comes from a package that is using an older version\n'+
       'of the machine runner.  Nevertheless, it does seem to support the traditional\n'+
       'usage (`setEnvironment()`), which should do the trick...\n'+
       chalk.gray(
-      '|  If you happen to be the maintainer of the source machinepack, then please\n'+
-      '|  upgrade your pack to the latest version of the machine runner.'
+      '|  If you happen to be the maintainer of this package, then please\n'+
+      '|  upgrade your package to the latest version of the machine runner.'
       )+
       '\n'
     );
@@ -988,7 +980,17 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
   }
   // If even THAT doesn't work, then give up-- failing w/ a fatal error.
   else {
-    throw new Error('The provided pre-built ("wet") machine does not support `.setEnv()`, presumably because it was built with an older version of the machine runner.  Automatically tried to use `setEnvironment()` as well, but that didn\'t work either.  So please try "dehydrating" the machine by entering its `inputs`, `exits`, `fn`, etc. manually.  (If you happen to be the author of the source machinepack, then please upgrade your pack to the latest version of the machine runner.)  If you experience further issues, please visit http://sailsjs.com/support for help.');
+    throw new Error(
+      'The provided pre-built ("wet") machine does not support `.meta()`,\n'+
+      'presumably because it was built with an older version of the machine runner.\n'+
+      'Automatically tried to use `setEnvironment()` as well, but that didn\'t\n'+
+      'work either.  So please try "dehydrating" the machine by entering its\n'+
+      '`inputs`, `exits`, `fn`, etc. manually.\n'+
+      '\n'+
+      '(If you happen to be the author of the source package, then please upgrade\n'+
+      'your pack to the latest version of the machine runner.)  If you experience\n'+
+      'further issues, please visit http://sailsjs.com/support for help.'
+    );
   }//>-•
 
 
