@@ -3,7 +3,9 @@
   "version": "4.1.1",
   "description": "Run a machine as a command-line script.",
   "scripts": {
-    "test": "node ./node_modules/mocha/bin/mocha test"
+    "test": "npm run custom-tests && npm run lint",
+    "custom-tests": "node ./node_modules/mocha/bin/mocha test",
+    "lint": "node ./node_modules/eslint/bin/eslint . --max-warnings=0 --ignore-pattern 'test/'"
   },
   "bin": {
     "machine-as-script": "./bin/machine-as-script.js"
@@ -24,11 +26,12 @@
     "yargs": "3.4.5"
   },
   "devDependencies": {
+    "eslint": "3.19.0",
     "machinepack-process": "^3.0.0-1",
     "mocha": "3.0.2"
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:treelinehq/machine-as-script.git"
+    "url": "git@github.com:sailshq/machine-as-script.git"
   }
 }

@@ -305,7 +305,7 @@ module.exports = function runMachineAsScript(optsOrMachineDef){
     var optShortcut = (function (){
       var _shortcut = '-'+inputCodeName[0];
       // If shortcut flag already exists using the same letter, don't provide a shortcut for this option.
-      if (_.contains(shortcutsSoFar, _shortcut)) return;
+      if (_.contains(shortcutsSoFar, _shortcut)) { return; }
       // Otherwise, keep track of the shortcut so we don't inadvertently use it again.
       shortcutsSoFar.push(_shortcut);
       return _shortcut;
