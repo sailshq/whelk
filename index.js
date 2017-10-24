@@ -25,11 +25,11 @@ var rttc = require('rttc');
  *         @property {Array?} envVarNamespace
  *         @property {SailsApp?} sails
  *
- * @return {LiveMachine}
- *         A live machine instance, but warped to accept argins from
+ * @return {Deferred}
+ *         A parley Deferred, ready to execute.  Accepts argins from
  *         serial command-line args, system environment vars, and
  *         command-line opts; and with pre-configured default exit
- *         handler callbacks that, unless overridden, writes output
+ *         handler callbacks that, unless overridden, write output
  *         to stdout or stderr.
  */
 module.exports = function runMachineAsScript(optsOrMachineDef){

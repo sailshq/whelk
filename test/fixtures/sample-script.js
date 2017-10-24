@@ -25,7 +25,7 @@ asScript({
     },
     exits: {
       success: {
-        example: 'blah blah'
+        outputExample: 'blah blah'
       }
     },
     fn: function (inputs, exits){
