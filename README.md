@@ -1,15 +1,21 @@
-# machine-as-script
+# whelk
 
-Run any machine as a command-line script.
+Run any JavaScript function as a shell script.
 
-Useful for running jobs (cron, Heroku scheduler), automating repetitive tasks (Grunt, gulp), writing one-off scripts (NPM, Chef), and building production-ready tools with command-line interfaces (e.g. `treeline`, `machinepack`).  Supports _serial command-line arguments_, command-line opts (`--`), and environment variables.
+`whelk` is a built-in feature of the Sails framework that enables the use of `sails run`, but it can also be used as a standalone module.
+
+Useful for running jobs (from cron, Heroku scheduler), automating repetitive tasks (Grunt, gulp), writing one-off scripts (NPM, Chef), and building production-ready tools with command-line interfaces (e.g. `sails`, `machinepack`).  Supports _serial command-line arguments_, command-line opts (`--`), and environment variables.  Provides neater output for uncaught exceptions and promise rejections.
+
+This package also includes optional support for command-line arg/opt validation, timeouts, and booting up and managing the lifecycle of a [Sails app](https://sailsjs.com) for access to your models, helpers, and custom configuration.
 
 
 ```sh
-$ npm install machine-as-script --save
+$ npm install whelk --save
 ```
 
-> New to Node?  Check out [**Getting Started With machine-as-script** from NPM](https://www.npmjs.com/package/machine-as-script/tutorial).
+> New to Node?  Check out [**Getting Started With whelk** from NPM](https://www.npmjs.com/package/whelk/tutorial).
+
+> Note: This package was formerly known as "machine-as-script", until it came time for a livelier name.
 
 
 ## Usage
@@ -19,7 +25,7 @@ $ npm install machine-as-script --save
 
 var MPMath = require('machinepack-math');
 
-require('machine-as-script')({
+require('whelk')({
   machine: MPMath.add
 }).exec({
   success: function (sum){
@@ -41,7 +47,7 @@ $ node ./add-numbers.js --a=4 --b=5
 
 ##### Assorted examples
 
-It's all well and good to build command-line scripts that do simple arithmetic, but what about something more practical?  Here are a few real-world examples of `machine-as-script` in practice:
+It's all well and good to build command-line scripts that do simple arithmetic, but what about something more practical?  Here are a few real-world examples of `whelk` in practice:
 
 + https://github.com/node-machine/machinepack/blob/93a7132117546ed897fa8391997d0b8aa301d6e4/bin/machinepack-browserify.js
 + https://github.com/node-machine/machinepack/blob/93a7132117546ed897fa8391997d0b8aa301d6e4/bin/machinepack-compare.js
@@ -56,7 +62,7 @@ Aside from the [normal properties that go into a Node Machine definition](http:/
 
 | Option            | Type            | Description                                            |
 |:------------------|-----------------|:-------------------------------------------------------|
-| `machine`         | ((dictionary?)) | If specified, `machine-as-script` will use this as the machine definition.  Otherwise by default, it expects the machine definition to be passed in at the top-level. In that case, the non-standard (machine-as-script-specific) options are omitted when the machine is built).
+| `machine`         | ((dictionary?)) | If specified, `whelk` will use this as the machine definition.  Otherwise by default, it expects the machine definition to be passed in at the top-level. In that case, the non-standard (whelk-specific) options are omitted when the machine is built).
 | `args`            | ((array?))      | The names of inputs, in order, to use for handling serial command-line arguments (more on that [below](#using-serial-command-line-arguments)).
 | `envVarNamespace` | ((string?))     | The namespace to use when mapping environment variables to runtime arguments for particular inputs (more on that [below](#using-system-environment-variables)).
 | `sails`           | ((SailsApp?))   | Only relevant if the machine def declares `habitat: 'sails'`.  This is the Sails app instance that will be provided to this machine as a habitat variable (`env.sails`).  In most cases, if you are using this, you'll want to set it to `require('sails').  The Sails app instance will be automatically loaded before running the machine, and automatically lowered as soon as the machine exits.
@@ -98,17 +104,17 @@ For example, in the example above, we might want to support adding an infinite n
 $ node ./add-numbers.js 4 5 10 -2382 31.482 13 48 139 13 1
 ```
 
-To help you accomplish this, `machine-as-script` injects all serial command-line arguments via a special
+To help you accomplish this, `whelk` injects all serial command-line arguments via a special
 habitat variable (`env.serialCommandLineArgs`).  Your machine can then loop over this array of strings
 and behave accordingly:
 
 ```js
 asScript({
-  
+
   description: 'Sum all of the provided numbers.',
 
   exits: {
-    
+
     success: {
       outputDescription: 'The sum of all the numbers that were specified via serial command-line args.',
       outputExample: 9
@@ -164,7 +170,7 @@ use your machine as a script without specifying serial command-line arguments or
 credentials or other configuration details to source control.  This is typically accomplished
 using environment variables.
 
-When using `machine-as-script`, as an alternative to command-line opts, you can specify input values
+When using `whelk`, as an alternative to command-line opts, you can specify input values
 using environment variables:
 
 ```sh
@@ -279,7 +285,7 @@ $ node ./is-null.js --value='null'
 
 ##### Mutable reference (`===`) inputs
 
-For the automatic console output of machine-as-script, mutable reference inputs work just like JSON (`*`) inputs. For custom behavior, just override the automatic handling using `.exec()`.
+For the automatic console output of whelk, mutable reference inputs work just like JSON (`*`) inputs. For custom behavior, just override the automatic handling using `.exec()`.
 
 To learn more about rttc types, check out the [rttc README on GitHub](https://github.com/node-machine/rttc).
 
@@ -310,13 +316,13 @@ In other words, if you specify the same input as a serial command-line argument 
 
 ##### How it works
 
-`machine-as-script` works by building a modified version of a machine instance that, when you call `.exec()`, will proxy its input values from serial command-line arguments (`myscript bar`), command-line opts (`myscript --foo='bar'`), and/or system environment variables (`___foo='bar' myscript`).
+`whelk` works by building a modified version of a machine instance that, when you call `.exec()`, will proxy its input values from serial command-line arguments (`myscript bar`), command-line opts (`myscript --foo='bar'`), and/or system environment variables (`___foo='bar' myscript`).
 
 ##### Conventions
 
-You should almost always call `.exec()` immediately after using `machine-as-script`, in the same file.  If you are building a command-line tool, it is conventional to keep these files in your project's `bin/` directory (see the `treeline` and `machinepack` CLI tools on NPM for examples).
+You should almost always call `.exec()` immediately after using `whelk`, in the same file.  If you are building a command-line tool, it is conventional to keep these files in your project's `bin/` directory (see the `treeline` and `machinepack` CLI tools on NPM for examples).
 
-If, when you call `.exec()`, you omit a callback for a non-standard exit, the standard behavior of the machine runner applies.  If you omit `error` or `success`, machine-as-script will attempt its best guess at appropriate output by using exit metadata + introspecting runtime output.  Similarly, runtime input values are validated vs. the exemplars and requiredness in the machine's input definitions.
+If, when you call `.exec()`, you omit a callback for a non-standard exit, the standard behavior of the machine runner applies.  If you omit `error` or `success`, whelk will attempt its best guess at appropriate output by using exit metadata + introspecting runtime output.  Similarly, runtime input values are validated vs. the exemplars and requiredness in the machine's input definitions.
 
 
 ## Support

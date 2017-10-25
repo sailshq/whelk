@@ -10,7 +10,7 @@ var Process = require('machinepack-process');
 
 describe('running a script', function (){
 
-  describe('that passes an empty machine def to `machine-as-script`', function (){
+  describe('that passes an empty machine def to `whelk`', function (){
     this.slow(1400);
 
     it('should not fail', function (done){
@@ -36,7 +36,7 @@ describe('running a script', function (){
 
 describe('running a script', function (){
 
-  describe('that passes a machine def w/ an outputExample, but no actual runtime output, to `machine-as-script`', function (){
+  describe('that passes a machine def w/ an outputExample, but no actual runtime output, to `whelk`', function (){
     this.slow(1400);
 
     it('should not fail, and should return the base value (granted, stringified)', function (done){

@@ -1,5 +1,5 @@
 {
-  "name": "machine-as-script",
+  "name": "whelk",
   "version": "4.1.1",
   "description": "Run a machine as a command-line script.",
   "scripts": {
@@ -7,7 +7,7 @@
     "custom-tests": "node ./node_modules/mocha/bin/mocha test",
     "lint": "node ./node_modules/eslint/bin/eslint . --max-warnings=0 --ignore-pattern 'test/'"
   },
-  "main": "./lib/machine-as-script.js",
+  "main": "./lib/whelk.js",
   "keywords": [
     "machine",
     "script",
@@ -31,6 +31,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:sailshq/machine-as-script.git"
+    "url": "git@github.com:sailshq/whelk.git"
   }
 }
