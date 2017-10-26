@@ -1,7 +1,7 @@
 {
   "name": "whelk",
-  "version": "4.1.1",
-  "description": "Run a machine as a command-line script.",
+  "version": "5.0.0",
+  "description": "Run a JavaScript function as a shell script.",
   "scripts": {
     "test": "npm run custom-tests && npm run lint",
     "custom-tests": "node ./node_modules/mocha/bin/mocha test",

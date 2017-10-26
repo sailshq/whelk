@@ -1,6 +1,6 @@
 # whelk
 
-Run any JavaScript function as a shell script.
+Run a JavaScript function as a shell script.
 
 `whelk` is a built-in feature of the Sails framework that enables the use of `sails run`, but it can also be used as a standalone module.
 
@@ -20,17 +20,77 @@ $ npm install whelk --save
 
 ## Usage
 
+If you are using Sails > v1.x, you don't need to use `whelk` at all.  Just create a file in the `scripts/` folder of your app, like this one:
+
+```js
+// scripts/send-email-proof-reminders.js
+module.exports = {
+
+  description: 'Send a reminder to any recent users who haven\'t confirmed their email address yet.',
+
+  inputs: {
+    template: {
+      description: 'The name of another email template to use as an optional override.',
+      type: 'string',
+      defaultsTo: 'reminder-to-confirm-email'
+    }
+  },
+
+  fn: async function (inputs, exits) {
+
+    await User.stream({
+      emailStatus: 'pending',
+      emailConfirmationReminderAlreadySent: false,
+      createdAt: { '>': Date.now() - 1000*60*60*24*3 }
+    })
+    .eachRecord(async(user, proceed)=>{
+      await sails.helpers.sendTemplateEmail({
+        to: user.emailAddress,
+        template: 'reminder-to-confirm-email',
+        templateData: {
+          user: user
+        }
+      });
+      return proceed();
+    });//∞
+
+    return exits.success();
+
+  }
+};
+```
+
+Then, for example, you can run:
+
+```sh
+$ sails run send-email-proof-reminders
+```
+
+Or, for convenience w/ tab-completion, even:
+
+```sh
+$ sails run scripts/send-email-proof-reminders.js
+```
+
+To use customize behavior:
+
+```sh
+$ sails run send-email-proof-reminders --template='alternative-reminder'
+```
+
+In addition to command-line options, you can also use system environment variables or serial command-line arguments.  (More on that below.)
+
+
+
+## Standalone usage
+
+`whelk` can also be used outside of the context of a Sails app, for anything you like.
+
 ```js
 #!/usr/bin/env node
 
-var MPMath = require('machinepack-math');
-
 require('whelk')({
-  machine: MPMath.add
-}).exec({
-  success: function (sum){
-    console.log('Got result:', sum);
-  }
+  machine: require('machinepack-math').add
 });
 ```
 
@@ -64,8 +124,8 @@ Aside from the [normal properties that go into a Node Machine definition](http:/
 |:------------------|-----------------|:-------------------------------------------------------|
 | `machine`         | ((dictionary?)) | If specified, `whelk` will use this as the machine definition.  Otherwise by default, it expects the machine definition to be passed in at the top-level. In that case, the non-standard (whelk-specific) options are omitted when the machine is built).
 | `args`            | ((array?))      | The names of inputs, in order, to use for handling serial command-line arguments (more on that [below](#using-serial-command-line-arguments)).
-| `envVarNamespace` | ((string?))     | The namespace to use when mapping environment variables to runtime arguments for particular inputs (more on that [below](#using-system-environment-variables)).
-| `sails`           | ((SailsApp?))   | Only relevant if the machine def declares `habitat: 'sails'`.  This is the Sails app instance that will be provided to this machine as a habitat variable (`env.sails`).  In most cases, if you are using this, you'll want to set it to `require('sails').  The Sails app instance will be automatically loaded before running the machine, and automatically lowered as soon as the machine exits.
+| `envVarNamespace` | ((string?))     | The namespace to use when mapping system environment variables to runtime argins for particular inputs (more on that [below](#using-system-environment-variables)).
+| `sails`           | ((SailsApp?))   | Only relevant if the machine def declares `habitat: 'sails'`.  This is the Sails app instance that will be provided to this machine as a habitat variable (`this.sails`).  In most cases, if you are using this, you'll want to set it to `require('sails').  The Sails app instance will be automatically loaded before running the machine, and automatically lowered as soon as the machine exits.
 
 
 
@@ -76,13 +136,9 @@ In addition to specifying inputs as `--` command-line opts, you can configure yo
 Just specify `args` as an array of input names, in the expected order:
 
 ```js
-asScript({
+whelk({
   machine: MPMath.add,
   args: ['a', 'b']
-}).exec({
-  success: function (sum){
-    console.log('Got result:', sum);
-  }
 });
 ```
 
@@ -105,11 +161,11 @@ $ node ./add-numbers.js 4 5 10 -2382 31.482 13 48 139 13 1
 ```
 
 To help you accomplish this, `whelk` injects all serial command-line arguments via a special
-habitat variable (`env.serialCommandLineArgs`).  Your machine can then loop over this array of strings
+habitat variable (`this.serialCommandLineArgs`).  Your machine can then loop over this array of strings
 and behave accordingly:
 
 ```js
-asScript({
+whelk({
 
   description: 'Sum all of the provided numbers.',
 
@@ -126,14 +182,12 @@ asScript({
 
   },
 
-  fn: function (inputs, exits, env){
+  fn: function (inputs, exits){
 
-    var aimErrorAt = require('aim-error-at');
-
-    var sum = env.serialCommandLineArgs.reduce(function (memo, numberHopefully){
+    var sum = this.serialCommandLineArgs.reduce((memo, numberHopefully)=>{
       var num = +numberHopefully;
       if (Number.isNaN(num)) {
-        throw aimErrorAt('invalidNumber', new Error('Could not parse `'+numberHopefully+'` as a number.'));
+        throw { invalidNumber: 'Could not parse `'+numberHopefully+'` as a number.' };
       }
       memo += num;
       return memo;
@@ -143,22 +197,16 @@ asScript({
 
   }
 
-}).exec({
-  success: function (sum){
-    console.log('Got result:', sum);
-  }
 });
 ```
 
-Note that `env.serialCommandLineArgs` is not affected by the `args` directive.  In other words, it is _always_ an
-array of strings, even if the `args` directive was provided and pointed at inputs w/ different types of examples
-(e.g. numbers, dictionaries, etc.).
+Note that `this.serialCommandLineArgs` is not affected by the `args` directive.  In other words, it is _always_ an array of strings, even if the `args` directive was provided and pointed at inputs w/ different types of examples (e.g. numbers, dictionaries, etc.).
 
 
 > ###### Compatibility
 >
 > + This habitat variable is the evolution of the `args` input from <=v3.
-> + Prior to v5, this was provided as `env.commandLineArgs` for a short period of time.
+> + Prior to v5, this was provided as `this.commandLineArgs` for a short period of time.
 
 
 
@@ -191,13 +239,9 @@ The default namespace is 3 underscores (`___`).  In other words, if your machine
 To customize the namespace for your script, just specify an `envVarNamespace`:
 
 ```js
-asScript({
+whelk({
   machine: MPMath.add,
   envVarNamespace: 'add_numbers__'
-}).exec({
-  success: function (sum){
-    console.log('Got result:', sum);
-  }
 });
 ```
 
@@ -205,7 +249,6 @@ Now your custom string will be the expected namespace for environment variables:
 
 ```sh
 $ add_numbers__a=4 add_numbers__b=5 node ./add-numbers.js
-# Got result: 9
 ```
 
 
@@ -222,7 +265,7 @@ Note that input code names are _case-sensitive_, and therefore the names of envi
 
 So it's really easy to see how string input values can be configured using command-line opts, arguments, or environment variables.  But more often than not, when configuring a script, you need to specify an input value that _isn't_ a string-- things like arrays, dictionaries, booleans, and numbers.
 
-This module lets you configure _any_ input value-- even lamdas.  Internally, it uses the [`parseHuman()` method from `rttc`](https://github.com/node-machine/rttc#parsehumanstringfromhuman-typeschemaundefined-unsafemodefalse).  For a more detailed look at the exact rules, check out the README in the rttc repo.  Below, we look at one example for each of the major use cases you're likely to run into.
+This module lets you configure _any_ input value-- even functions.  Internally, it uses the [`parseHuman()` method from `rttc`](https://github.com/node-machine/rttc#parsehumanstringfromhuman-typeschemaundefined-unsafemodefalse).  For a more detailed look at the exact rules, check out the README in the rttc repo.  Below, we look at one example for each of the major use cases you're likely to run into.
 
 ##### Numeric inputs
 
@@ -285,9 +328,9 @@ $ node ./is-null.js --value='null'
 
 ##### Mutable reference (`===`) inputs
 
-For the automatic console output of whelk, mutable reference inputs work just like JSON (`*`) inputs. For custom behavior, just override the automatic handling using `.exec()`.
+For the automatic console output of whelk, mutable reference inputs work just like JSON (`*`) inputs.
 
-To learn more about rttc types, check out the [rttc README on GitHub](https://github.com/node-machine/rttc).
+To learn more about data types, check out the Sails framework documentation or the [rttc README on GitHub](https://github.com/node-machine/rttc).
 
 
 
@@ -297,7 +340,7 @@ To learn more about rttc types, check out the [rttc README on GitHub](https://gi
 
 ##### Escaping your input values
 
-The rules for escaping env vars, command-line opts, and serial command-line arguments can vary across operating systems.  However, a good reference point is the [escape machine in mp-process](http://node-machine.org/machinepack-process/escape).  That's what the `machinepack` command-line tool uses internally for creating code samples after a machine is run using `mp exec`.
+The rules for escaping env vars, command-line opts, and serial command-line arguments can vary across operating systems.  However, a good reference point is the [escape machine in machinepack-process](http://node-machine.org/machinepack-process/escape).  That's what the `machinepack` command-line tool uses internally for creating code samples after a machine is run using `mp exec`, for example.
 
 
 ##### Precedence
@@ -316,19 +359,16 @@ In other words, if you specify the same input as a serial command-line argument 
 
 ##### How it works
 
-`whelk` works by building a modified version of a machine instance that, when you call `.exec()`, will proxy its input values from serial command-line arguments (`myscript bar`), command-line opts (`myscript --foo='bar'`), and/or system environment variables (`___foo='bar' myscript`).
+`whelk` works by building a modified version of a machine instance that proxies argins for its inputs from serial command-line arguments (`myscript bar`), command-line opts (`myscript --foo='bar'`), and/or system environment variables (`___foo='bar' myscript`).
 
 ##### Conventions
 
-You should almost always call `.exec()` immediately after using `whelk`, in the same file.  If you are building a command-line tool, it is conventional to keep these files in your project's `bin/` directory (see the `treeline` and `machinepack` CLI tools on NPM for examples).
-
-If, when you call `.exec()`, you omit a callback for a non-standard exit, the standard behavior of the machine runner applies.  If you omit `error` or `success`, whelk will attempt its best guess at appropriate output by using exit metadata + introspecting runtime output.  Similarly, runtime input values are validated vs. the exemplars and requiredness in the machine's input definitions.
+If you are building a command-line tool, it is conventional to keep these files in your project's `bin/` directory.  In a Sails app, use the `scripts/` folder (and instead of requiring `whelk`, just export your script definition using `module.exports`!)
 
 
 ## Support
 
-For more help, check out the [node-machine newsgroup](https://groups.google.com/forum/#!forum/node-machine) and [http://node-machine.org](http://node-machine.org).
-
+For more help, [click here](https://sailsjs.com/support).
 
 
 ## License
