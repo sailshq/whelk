@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-var asScript = require('../../');
+var whelk = require('../../');
 
 //  ┌─┐┌─┐┬─┐┬┌─┐┌┬┐  ┌─┐─┐ ┬┌─┐┌─┐┌─┐┌┬┐┬┌┐┌┌─┐
 //  └─┐│  ├┬┘│├─┘ │   ├┤ ┌┴┬┘├─┘├┤ │   │ │││││ ┬
@@ -11,7 +11,7 @@ var asScript = require('../../');
 //  ┌─┐┌─┐  ┌─┐┌─┐┬─┐┬┌─┐┬    ┌─┐┬─┐┌─┐
 //  ├─┤└─┐  └─┐├┤ ├┬┘│├─┤│    ├─┤├┬┘│ ┬
 //  ┴ ┴└─┘  └─┘└─┘┴└─┴┴ ┴┴─┘  ┴ ┴┴└─└─┘
-asScript({
+whelk({
   args: ['something'],
   inputs: {
     something: { example: 'some string', required: true }

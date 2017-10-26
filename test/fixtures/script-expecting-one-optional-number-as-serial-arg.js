@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-var asScript = require('../../');
+var whelk = require('../../');
 
 
 //  ┌─┐┌─┐┬─┐┬┌─┐┌┬┐  ┌─┐─┐ ┬┌─┐┌─┐┌─┐┌┬┐┬┌┐┌┌─┐
@@ -12,7 +12,7 @@ var asScript = require('../../');
 //  ┌─┐┌─┐  ┌─┐┌─┐┬─┐┬┌─┐┬    ┌─┐┬─┐┌─┐
 //  ├─┤└─┐  └─┐├┤ ├┬┘│├─┤│    ├─┤├┬┘│ ┬
 //  ┴ ┴└─┘  └─┘└─┘┴└─┴┴ ┴┴─┘  ┴ ┴┴└─└─┘
-asScript({
+whelk({
   args: ['highScore'],
   inputs: {
     highScore: { example: 1234 }
