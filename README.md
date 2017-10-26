@@ -72,7 +72,7 @@ Or, for convenience w/ tab-completion, even:
 $ sails run scripts/send-email-proof-reminders.js
 ```
 
-To use customize behavior:
+To customize behavior:
 
 ```sh
 $ sails run send-email-proof-reminders --template='alternative-reminder'
