@@ -13,6 +13,7 @@ var whelk = require('../../');
 //  ├─┤└─┐  └─┐├┤ ├┬┘│├─┤│    ├─┤├┬┘│ ┬
 //  ┴ ┴└─┘  └─┘└─┘┴└─┴┴ ┴┴─┘  ┴ ┴┴└─└─┘
 whelk({
+  useRawOutput: true,
   args: ['highScore'],
   inputs: {
     highScore: { example: 1234 }

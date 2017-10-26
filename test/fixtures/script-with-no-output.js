@@ -6,12 +6,15 @@ var whelk = require('../../');
 //  └─┐│  ├┬┘│├─┘ │   ║║║║ ║ ╠═╣  ║║║║ ║  ║ ║║ ║ ║ ╠═╝║ ║ ║
 //  └─┘└─┘┴└─┴┴   ┴   ╚╩╝╩ ╩ ╩ ╩  ╝╚╝╚═╝  ╚═╝╚═╝ ╩ ╩  ╚═╝ ╩
 whelk({
-  exits: {
-    success: {
-      outputExample: ['blah blah']
+  useRawOutput: true,
+  machine: {
+    exits: {
+      success: {
+        outputExample: ['blah blah']
+      }
+    },
+    fn: function (inputs, exits){
+      return exits.success();
     }
-  },
-  fn: function (inputs, exits){
-    return exits.success();
   }
 });

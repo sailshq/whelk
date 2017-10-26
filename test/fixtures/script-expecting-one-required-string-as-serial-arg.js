@@ -12,6 +12,7 @@ var whelk = require('../../');
 //  ├─┤└─┐  └─┐├┤ ├┬┘│├─┤│    ├─┤├┬┘│ ┬
 //  ┴ ┴└─┘  └─┘└─┘┴└─┴┴ ┴┴─┘  ┴ ┴┴└─└─┘
 whelk({
+  useRawOutput: true,
   args: ['something'],
   inputs: {
     something: { example: 'some string', required: true }
