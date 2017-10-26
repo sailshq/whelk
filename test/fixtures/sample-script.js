@@ -33,8 +33,4 @@ whelk({
       return exits.success('it worked');
     }
   }
-}).exec({
-  success: function (outputMsg){
-    process.stdout.write(outputMsg);
-  }
 });

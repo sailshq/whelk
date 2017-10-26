@@ -32,8 +32,4 @@ whelk({
     // --•
     return exits.success('Provided high score is `'+inputs.highScore+'`.');
   }
-}).exec({
-  success: function (outputMsg){
-    process.stdout.write(outputMsg);
-  }
 });

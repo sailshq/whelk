@@ -31,8 +31,4 @@ whelk({
     // --•
     return exits.success('got "'+inputs.something+'"');
   }
-}).exec({
-  success: function (outputMsg){
-    process.stdout.write(outputMsg);
-  }
 });

@@ -39,7 +39,7 @@ describe('running a script', function (){
   describe('that passes a machine def w/ an outputExample, but no actual runtime output, to `whelk`', function (){
     this.slow(1400);
 
-    it('should not fail, and should return the base value (granted, stringified)', function (done){
+    it('should not fail, and should return nothing (which ends up meaning empty string for our purposes here)', function (done){
 
       Process.executeCommand({
         dir: __dirname,
@@ -48,7 +48,7 @@ describe('running a script', function (){
         timeout: 1500
       }).exec(function (err,outs){
         if (err){ return done(err); }
-        try { assert.equal(outs.stdout, '[]'); }
+        try { assert.equal(outs.stdout, ''); }
         catch (e) { return done(e); }
         return done();
       });

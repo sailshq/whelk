@@ -155,7 +155,7 @@ describe('running a script', function (){
         timeout: 1500
       }).exec(function (err,outs){
         if (err){ return done(err); }
-        try { assert.equal(outs.stdout, '[]'); }
+        try { assert.equal(outs.stdout, ''); }
         catch (e) { return done(e); }
         return done();
       });
@@ -170,7 +170,7 @@ describe('running a script', function (){
         timeout: 1500
       }).exec(function (err,outs){
         if (err){ return done(err); }
-        try { assert.equal(outs.stdout, '[]'); }
+        try { assert.equal(outs.stdout, ''); }
         catch (e) { return done(e); }
         return done();
       });
