@@ -134,7 +134,7 @@ Aside from the [normal properties that go into a Node Machine definition](http:/
 | `args`            | ((array?))      | The names of inputs, in order, to use for handling serial command-line arguments (more on that [below](#using-serial-command-line-arguments)).
 | `envVarNamespace` | ((string?))     | The namespace to use when mapping system environment variables to runtime argins for particular inputs (more on that [below](#using-system-environment-variables)).
 | `sails`           | ((SailsApp?))   | Only relevant if the machine def declares `habitat: 'sails'`.  This is the Sails app instance that will be provided to this machine as a habitat variable (`this.sails`).  In most cases, if you are using this, you'll want to set it to `require('sails').  The Sails app instance will be automatically loaded before running the machine, and automatically lowered as soon as the machine exits.
-| `useRawOutput`    | ((Boolean?))    | If enabled, raw output will be logged to stdout/stderr instead of formatted, human-readable output.
+| `useRawOutput`    | ((Boolean?))    | If enabled, raw output will be logged to stdout/stderr instead of formatted, human-readable output.  (Note that, with this enabled, if output is not already a string, it will be encoded as JSON, if possible.  The encoding semantics are similar to [`res.send()`](https://sailsjs.com/documentation/reference/response-res/res-send).)
 
 
 
