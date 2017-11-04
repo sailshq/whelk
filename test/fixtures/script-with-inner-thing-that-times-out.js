@@ -6,7 +6,7 @@ var doSomethingThatTakesTooLong = require('machine')({
   timeout: 2000,
   inputs: { numPets: { type: 'number' } },
   exits: {notFound:{}},
-  fn: (inputs, exits)=>{
+  fn: function (inputs, exits) {
     setTimeout(function(){
       return exits.success();
     }, 60000);
@@ -14,9 +14,10 @@ var doSomethingThatTakesTooLong = require('machine')({
 });
 
 whelk({
+  friendlyName: __filename,
   fn: function (inputs, exits) {
 
-    doSomethingThatTakesTooLong().exec((err)=>{
+    doSomethingThatTakesTooLong().exec(function (err){
       if (err){ return exits.error(err); }
       return exits.success();
     });

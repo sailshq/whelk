@@ -7,7 +7,8 @@ var whelk = require('../../');
 //  └─┘└─┘┴└─┴┴   ┴   ╚╩╝╩ ╩ ╩ ╩  ╝╚╝╚═╝  ╚═╝╚═╝ ╩ ╩  ╚═╝ ╩
 whelk({
   useRawOutput: true,
-  machine: {
+  def: {
+    friendlyName: __filename,
     exits: {
       success: {
         outputExample: ['blah blah']

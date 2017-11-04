@@ -5,7 +5,7 @@ var doSomething = require('machine')({
   identity: 'do-something',
   inputs: { numPets: { type: 'number' } },
   exits: {notFound:{}},
-  fn: (inputs, exits)=>{
+  fn: function (inputs, exits) {
     setTimeout(function(){
       return exits.success();
     }, 60000);
@@ -13,11 +13,12 @@ var doSomething = require('machine')({
 });
 
 whelk({
+  friendlyName: __filename,
   fn: function (inputs, exits) {
 
     doSomething({
       numPets: 'definitely not a number'
-    }).exec((err)=>{
+    }).exec(function(err){
       if (err){ return exits.error(err); }
       return exits.success();
     });

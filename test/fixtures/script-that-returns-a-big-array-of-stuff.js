@@ -3,6 +3,7 @@
 var whelk = require('../../');
 
 whelk({
+  friendlyName: __filename,
   fn: function (inputs, exits) {
 
     var bigArrayOfStuff =

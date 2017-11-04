@@ -16,7 +16,8 @@ var whelk = require('../../');
 whelk({
   useRawOutput: true,
   envVarNamespace: 'wha_',
-  machine: {
+  def: {
+    friendlyName: __filename,
     inputs: {
       someRequiredString: { example: 'some string', required: true },
       someOptionalString: { example: 'some string' },
