@@ -90,14 +90,22 @@ In addition to command-line options, you can also use system environment variabl
 #!/usr/bin/env node
 
 require('whelk')({
-  machine: require('machinepack-math').add
+  friendlyName: 'Proclaim sum',
+  inputs: {
+    a: { type: 'number', required: true },
+    b: { type: 'number', required: true },
+  },
+  fn: async function (inputs, exits) {
+    console.log(inputs.a + inputs.b);
+    return exits.success();
+  }
 });
 ```
 
 Now you can run your machine as a script and provide input values as command-line opts:
 
 ```sh
-$ node ./add-numbers.js --a=4 --b=5
+$ node ./proclaim-sum.js --a=4 --b=5
 # Got result: 9
 ```
 
@@ -122,7 +130,7 @@ Aside from the [normal properties that go into a Node Machine definition](http:/
 
 | Option            | Type            | Description                                            |
 |:------------------|-----------------|:-------------------------------------------------------|
-| `machine`         | ((dictionary?)) | If specified, `whelk` will use this as the machine definition.  Otherwise by default, it expects the machine definition to be passed in at the top-level. In that case, the non-standard (whelk-specific) options are omitted when the machine is built).
+| `def`             | ((dictionary?)) | If specified, `whelk` will use this as the [shell script definition](http://node-machine.org).  Otherwise by default, it expects the definition to be passed in at the top-level.  In that case, the `whelk`-specific options like `envVarNamespace` are omitted when the shell script is built and executed.
 | `args`            | ((array?))      | The names of inputs, in order, to use for handling serial command-line arguments (more on that [below](#using-serial-command-line-arguments)).
 | `envVarNamespace` | ((string?))     | The namespace to use when mapping system environment variables to runtime argins for particular inputs (more on that [below](#using-system-environment-variables)).
 | `sails`           | ((SailsApp?))   | Only relevant if the machine def declares `habitat: 'sails'`.  This is the Sails app instance that will be provided to this machine as a habitat variable (`this.sails`).  In most cases, if you are using this, you'll want to set it to `require('sails').  The Sails app instance will be automatically loaded before running the machine, and automatically lowered as soon as the machine exits.
@@ -137,16 +145,24 @@ In addition to specifying inputs as `--` command-line opts, you can configure yo
 Just specify `args` as an array of input names, in the expected order:
 
 ```js
-whelk({
-  machine: MPMath.add,
-  args: ['a', 'b']
+require('whelk')({
+  friendlyName: 'Proclaim sum',
+  args: ['a', 'b'],
+  inputs: {
+    a: { type: 'number', required: true },
+    b: { type: 'number', required: true },
+  },
+  fn: async function (inputs, exits) {
+    console.log(inputs.a + inputs.b);
+    return exits.success();
+  }
 });
 ```
 
 Now you can use serial command-line arguments to configure the related inputs:
 
 ```sh
-$ node ./add-numbers.js 4 5
+$ node ./proclaim-sum.js 4 5
 # Got result: 9
 ```
 
@@ -158,7 +174,7 @@ Sometimes, it's useful to be able to get _all_ serial command-line arguments, wi
 For example, in the example above, we might want to support adding an infinite number of numbers delimited by spaces on the command line:
 
 ```sh
-$ node ./add-numbers.js 4 5 10 -2382 31.482 13 48 139 13 1
+$ node ./proclaim-sum.js 4 5 10 -2382 31.482 13 48 139 13 1
 ```
 
 To help you accomplish this, `whelk` injects all serial command-line arguments via a special
@@ -166,25 +182,19 @@ habitat variable (`this.serialCommandLineArgs`).  Your machine can then loop ove
 and behave accordingly:
 
 ```js
-whelk({
-
-  description: 'Sum all of the provided numbers.',
-
+require('whelk')({
+  friendlyName: 'Proclaim sum',
+  description: 'Log the sum of all of the provided numbers.',
   exits: {
-
     success: {
       outputDescription: 'The sum of all the numbers that were specified via serial command-line args.',
       outputExample: 9
     },
-
     invalidNumber: {
       description: 'One of the provided command-line args could not be parsed as a number.'
     }
-
   },
-
-  fn: function (inputs, exits){
-
+  fn: async function (inputs, exits) {
     var sum = this.serialCommandLineArgs.reduce((memo, numberHopefully)=>{
       var num = +numberHopefully;
       if (Number.isNaN(num)) {
@@ -193,11 +203,8 @@ whelk({
       memo += num;
       return memo;
     });
-
     return exits.success(sum);
-
   }
-
 });
 ```
 
@@ -223,7 +230,7 @@ When using `whelk`, as an alternative to command-line opts, you can specify inpu
 using environment variables:
 
 ```sh
-$ ___a=4 ___b=5 node ./add-numbers.js
+$ ___a=4 ___b=5 node ./proclaim-sum.js
 # Got result: 9
 ```
 
@@ -240,16 +247,26 @@ The default namespace is 3 underscores (`___`).  In other words, if your machine
 To customize the namespace for your script, just specify an `envVarNamespace`:
 
 ```js
-whelk({
-  machine: MPMath.add,
-  envVarNamespace: 'add_numbers__'
+require('whelk')({
+  envVarNamespace: 'add_numbers__',
+  def: {
+    friendlyName: 'Proclaim sum',
+    inputs: {
+      a: { type: 'number', required: true },
+      b: { type: 'number', required: true },
+    },
+    fn: async function (inputs, exits) {
+      console.log(inputs.a + inputs.b);
+      return exits.success();
+    }
+  }
 });
 ```
 
 Now your custom string will be the expected namespace for environment variables:
 
 ```sh
-$ add_numbers__a=4 add_numbers__b=5 node ./add-numbers.js
+$ add_numbers__a=4 add_numbers__b=5 node ./proclaim-sum.js
 ```
 
 
@@ -271,7 +288,7 @@ This module lets you configure _any_ input value-- even functions.  Internally, 
 ##### Numeric inputs
 
 ```sh
-$ node ./add-numbers.js --a='4' --b='5'
+$ node ./proclaim-sum.js --a='4' --b='5'
 ```
 
 ##### Boolean inputs
