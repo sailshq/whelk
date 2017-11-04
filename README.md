@@ -140,7 +140,7 @@ Aside from the [normal properties that go into a Node Machine definition](http:/
 
 ## Using serial command-line arguments
 
-In addition to specifying inputs as `--` command-line opts, you can configure your script to accept _serial command-line arguments_.
+In addition to specifying inputs as `--` command-line opts, you can configure your script to accept _serial command-line arguments_, also known as "positionals".
 
 Just specify `args` as an array of input names, in the expected order:
 
@@ -362,7 +362,7 @@ To learn more about data types, check out the Sails framework documentation or t
 ## Misc
 
 
-##### Escaping your input values
+##### Escaping your argins
 
 The rules for escaping env vars, command-line opts, and serial command-line arguments can vary across operating systems.  However, a good reference point is the [escape machine in machinepack-process](http://node-machine.org/machinepack-process/escape).  That's what the `machinepack` command-line tool uses internally for creating code samples after a machine is run using `mp exec`, for example.
 
@@ -371,14 +371,14 @@ The rules for escaping env vars, command-line opts, and serial command-line argu
 
 It's always best to keep things simple.  In keeping with that spirit, you should never _intentionally_ use both environment variables AND command-line opts/args to configure your script. But weird things are unavoidable, and when debugging, it's helpful to know more about the tools you use in case something jumps out.
 
-Starting from the highest precedence, here is a list of how this module prioritizes your input configurations:
+Starting from the highest precedence, here is a list of how this module prioritizes your input values:
 
 1. Serial command-line arguments (`./my-script.js bar`)
 2. System environment variables (`foo=bar ./my-script.js`)
 3. Command-line opts (`./my-script.js --foo='bar'`)
 
 
-In other words, if you specify the same input as a serial command-line argument AND as a system environment variable or command-line opt, the serial argument will always "win".  And if you specify the same input as a system environment variable and command-line opt, the system environment variable will always win.
+In other words, if you specify the same argin as a serial command-line argument AND as a system environment variable or command-line opt, the serial argument will always "win".  And if you specify the same input as a system environment variable and command-line opt, the system environment variable will always win.
 
 
 ##### How it works
