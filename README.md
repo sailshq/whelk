@@ -297,11 +297,17 @@ $ node ./proclaim-sum.js --a='4' --b='5'
 $ node ./divide-numbers.js --a='9' --b='5' --useFloatingPoint='false'
 ```
 
+<!--
+Note: This should still work, but no reason to make everybody's brains bleed by putting
+this in the README.  Contact mikermcneil on twitter if you need to use this and are having
+issues.
+
 ##### Lamda (`->`) inputs
 
 ```sh
 $ node ./each.js --array='[]' --iteratee='function (thing){ return thing.foo; }'
 ```
+-->
 
 ##### Dictionary (`{}`) and array (`[]`) inputs
 
