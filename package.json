@@ -1,6 +1,6 @@
 {
   "name": "whelk",
-  "version": "5.0.1",
+  "version": "5.0.2",
   "description": "Run a JavaScript function as a shell script.",
   "scripts": {
     "test": "npm run custom-tests && npm run lint",
