@@ -133,6 +133,7 @@ Aside from the [normal properties that go into a Node Machine definition](http:/
 | `def`             | ((dictionary?)) | If specified, `whelk` will use this as the [shell script definition](http://node-machine.org).  Otherwise by default, it expects the definition to be passed in at the top-level.  In that case, the `whelk`-specific options like `envVarNamespace` are omitted when the shell script is built and executed.
 | `args`            | ((array?))      | The names of inputs, in order, to use for handling serial command-line arguments (more on that [below](#using-serial-command-line-arguments)).
 | `envVarNamespace` | ((string?))     | The namespace to use when mapping system environment variables to runtime argins for particular inputs (more on that [below](#using-system-environment-variables)).
+| `rawSerialCommandLineArgs` | ((array)) | An array of strings to use instead of attempting to automatically parse serial command-line arguments at runtime.  This is useful when bundling whelk within a higher-level module (like Sails, for example.)
 | `sails`           | ((SailsApp?))   | Only relevant if the machine def declares `habitat: 'sails'`.  This is the Sails app instance that will be provided to this machine as a habitat variable (`this.sails`).  In most cases, if you are using this, you'll want to set it to `require('sails').  The Sails app instance will be automatically loaded before running the machine, and automatically lowered as soon as the machine exits.
 | `useRawOutput`    | ((Boolean?))    | If enabled, raw output will be logged to stdout/stderr instead of formatted, human-readable output.  (Note that, with this enabled, if output is not already a string, it will be encoded as JSON, if possible.  The encoding semantics are similar to [`res.send()`](https://sailsjs.com/documentation/reference/response-res/res-send).)
 
@@ -142,7 +143,7 @@ Aside from the [normal properties that go into a Node Machine definition](http:/
 
 In addition to specifying inputs as `--` command-line opts, you can configure your script to accept _serial command-line arguments_, also known as "positionals".
 
-Just specify `args` as an array of input names, in the expected order:
+Just specify `args` in your script definition as an array of input names, in the expected order:
 
 ```js
 require('whelk')({
@@ -369,7 +370,7 @@ The rules for escaping env vars, command-line opts, and serial command-line argu
 
 ##### Precedence
 
-It's always best to keep things simple.  In keeping with that spirit, you should never _intentionally_ use both environment variables AND command-line opts/args to configure your script. But weird things are unavoidable, and when debugging, it's helpful to know more about the tools you use in case something jumps out.
+It's always best to keep things simple.  In keeping with that spirit, you should never _intentionally_ use both environment variables AND command-line opts/positionals to configure your script. But weird things are unavoidable, and when debugging, it's helpful to know more about the tools you use in case something jumps out.
 
 Starting from the highest precedence, here is a list of how this module prioritizes your input values:
 
