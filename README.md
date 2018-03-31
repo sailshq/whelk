@@ -398,4 +398,4 @@ For more help, [click here](https://sailsjs.com/support).
 
 ## License
 
-MIT &copy; 2015-2017 Mike McNeil, Sails Co.
+MIT &copy; 2015-present Mike McNeil
