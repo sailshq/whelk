@@ -10,7 +10,7 @@ This package also includes optional support for command-line arg/opt validation,
 
 
 ```sh
-$ npm install whelk --save
+npm install whelk
 ```
 
 > New to Node?  Check out [**Getting Started With whelk** from NPM](https://www.npmjs.com/package/whelk/tutorial).
@@ -36,7 +36,7 @@ module.exports = {
     }
   },
 
-  fn: async function (inputs, exits) {
+  fn: async function ({template}) {
 
     await User.stream({
       emailStatus: 'pending',
@@ -46,15 +46,13 @@ module.exports = {
     .eachRecord(async(user, proceed)=>{
       await sails.helpers.sendTemplateEmail({
         to: user.emailAddress,
-        template: 'reminder-to-confirm-email',
+        template: template||'reminder-to-confirm-email',
         templateData: {
           user: user
         }
       });
       return proceed();
     });//∞
-
-    return exits.success();
 
   }
 };
@@ -95,9 +93,8 @@ require('whelk')({
     a: { type: 'number', required: true },
     b: { type: 'number', required: true },
   },
-  fn: async function (inputs, exits) {
-    console.log(inputs.a + inputs.b);
-    return exits.success();
+  fn: async function ({a, b}) {
+    console.log(a + b);
   }
 });
 ```
@@ -134,7 +131,7 @@ Aside from the [normal properties that go into a Node Machine definition](http:/
 | `args`            | ((array?))      | The names of inputs, in order, to use for handling serial command-line arguments (more on that [below](#using-serial-command-line-arguments)).
 | `envVarNamespace` | ((string?))     | The namespace to use when mapping system environment variables to runtime argins for particular inputs (more on that [below](#using-system-environment-variables)).
 | `rawSerialCommandLineArgs` | ((array)) | An array of strings to use instead of attempting to automatically parse serial command-line arguments at runtime.  This is useful when bundling whelk within a higher-level module (like Sails, for example.)
-| `sails`           | ((SailsApp?))   | Only relevant if the machine def declares `habitat: 'sails'`.  This is the Sails app instance that will be provided to this machine as a habitat variable (`this.sails`).  In most cases, if you are using this, you'll want to set it to `require('sails').  The Sails app instance will be automatically loaded before running the machine, and automatically lowered as soon as the machine exits.
+| `sails`           | ((SailsApp?))   | Only relevant if the machine def declares `habitat: 'sails'`.  This is the Sails app instance that will be provided to this machine as a habitat variable (`this.sails`).  In most cases, if you are using this, you'll want to set it to `require('sails').  The Sails app instance will be automatically loaded before running the machine, and automatically lowered as soon as the logic is finished, before the shell script exits.
 | `useRawOutput`    | ((Boolean?))    | If enabled, raw output will be logged to stdout/stderr instead of formatted, human-readable output.  (Note that, with this enabled, if output is not already a string, it will be encoded as JSON, if possible.  The encoding semantics are similar to [`res.send()`](https://sailsjs.com/documentation/reference/response-res/res-send).)
 
 
@@ -153,9 +150,8 @@ require('whelk')({
     a: { type: 'number', required: true },
     b: { type: 'number', required: true },
   },
-  fn: async function (inputs, exits) {
-    console.log(inputs.a + inputs.b);
-    return exits.success();
+  fn: async function ({a, b}) {
+    console.log(a + b);
   }
 });
 ```
@@ -195,7 +191,7 @@ require('whelk')({
       description: 'One of the provided command-line args could not be parsed as a number.'
     }
   },
-  fn: async function (inputs, exits) {
+  fn: async function () {
     var sum = this.serialCommandLineArgs.reduce((memo, numberHopefully)=>{
       var num = +numberHopefully;
       if (Number.isNaN(num)) {
@@ -204,7 +200,7 @@ require('whelk')({
       memo += num;
       return memo;
     });
-    return exits.success(sum);
+    return sum;
   }
 });
 ```
@@ -256,9 +252,8 @@ require('whelk')({
       a: { type: 'number', required: true },
       b: { type: 'number', required: true },
     },
-    fn: async function (inputs, exits) {
-      console.log(inputs.a + inputs.b);
-      return exits.success();
+    fn: async function ({a,b}) {
+      console.log(a + b);
     }
   }
 });
